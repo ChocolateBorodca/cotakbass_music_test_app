@@ -36,13 +36,14 @@ else:
     st.session_state.current_bg = None
     bg_html = "background-color: #000000;"
 
-# УЛЬТРА-СТЕКЛО И ПОЛНАЯ ЗАЧИСТКА
+# УЛЬТРА-МАТОВЫЙ CSS (Стиль как на фото)
 st.markdown(f"""
     <style>
-    /* Прячем надписи под инпутами и инструкции */
+    /* Полная блокировка системных надписей */
     [data-testid="stInputInstructions"], .st-emotion-cache-1pxm666, [data-baseweb="helper-text"] {{
         display: none !important;
         height: 0px !important;
+        visibility: hidden !important;
     }}
 
     header, footer, .stDeployButton, #MainMenu {{ display: none !important; }}
@@ -50,7 +51,7 @@ st.markdown(f"""
     html, body, [class*="st-"] {{ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important; }}
     
     .stApp {{ {bg_html} transition: background 0.8s ease; }}
-    .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.92); z-index: -1; }}
+    .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.93); z-index: -1; }}
     audio {{ display: none !important; }}
     
     /* Стеклянные кнопки навигации */
@@ -66,38 +67,62 @@ st.markdown(f"""
         transition: 0.3s ease !important;
     }}
 
-    /* ПОИСКОВАЯ СТРОКА (МАТОВОЕ СТЕКЛО) */
+    /* СТИЛЬ SEARCH КАК НА ФОТО */
+    .search-title-photo {{
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 8px;
+        text-transform: lowercase;
+        color: #4B0082; /* Глубокий фиолетовый неон */
+        text-align: center;
+        margin-bottom: 30px;
+        opacity: 0.8;
+        text-shadow: 0 0 10px rgba(75, 0, 130, 0.5);
+    }}
+
+    /* МАТОВАЯ ПОЛОСА ПОИСКА С ЛУПОЙ */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {{
-        background: rgba(255, 255, 255, 0.04) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(60px) brightness(0.7) !important;
         -webkit-backdrop-filter: blur(60px) brightness(0.7) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 24px !important;
+        border-radius: 22px !important;
+        position: relative;
     }}
     
+    /* Иконка лупы внутри полосы */
+    div[data-testid="stTextInput"] div[data-baseweb="input"]::after {{
+        content: "🔍";
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.3;
+        font-size: 16px;
+    }}
+
     div[data-testid="stTextInput"] input {{
         color: white !important;
         background: transparent !important;
-        padding: 22px !important;
+        padding: 20px 50px 20px 20px !important;
         border: none !important;
     }}
 
-    /* Прячем надпись "напиши хуйню" при вводе и саму метку */
     div[data-testid="stTextInput"] label {{ display: none !important; }}
 
-    .track-info {{ font-size: 16px; font-weight: 300; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.03); color: white; }}
+    .track-info {{ font-size: 16px; font-weight: 300; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.02); color: white; }}
     .app-header {{ font-size: 10px; letter-spacing: 5px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 45px; opacity: 0.5; }}
     </style>
     """, unsafe_allow_html=True)
 
-# Навигация (Баланс по краям)
+# Навигация
 n1, _, n2 = st.columns([0.15, 0.7, 0.15])
 with n1:
     if st.button("←" if st.session_state.page != "main" else "☰"):
         st.session_state.page = "main" if st.session_state.page != "main" else "library"
         st.rerun()
 with n2:
-    if st.button("🔍"): # Чистый символ лупы
+    if st.button("?"): # Кнопка в стиле "поиск/вопрос"
         st.session_state.page = "search"
         st.rerun()
 
@@ -105,8 +130,7 @@ if not tracks:
     st.info("No tracks")
 else:
     if st.session_state.page == "search":
-        st.markdown('<div class="app-header">search</div>', unsafe_allow_html=True)
-        # Чистое поле без инструкций
+        st.markdown('<div class="search-title-photo">search</div>', unsafe_allow_html=True)
         query = st.text_input("", placeholder="напиши хуйню", key="search_input")
         
         if query:
@@ -125,7 +149,7 @@ else:
     elif st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
         if not st.session_state.favorites:
-            st.write("<p style='text-align:center; opacity:0.4;'>Пусто</p>", unsafe_allow_html=True)
+            st.write("<p style='text-align:center; opacity:0.3;'>медиатека пуста</p>", unsafe_allow_html=True)
         else:
             for fav in list(st.session_state.favorites):
                 c_name, c_play = st.columns([0.85, 0.15])
@@ -146,11 +170,10 @@ else:
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
         
         st.markdown(f'<div style="text-align:center; margin-top:10vh;">', unsafe_allow_html=True)
-        st.markdown(f'<div style="font-size:42px; font-weight:700; margin-bottom:5px; letter-spacing:-1px;">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:42px; font-weight:700; margin-bottom:5px; letter-spacing:-1.5px; color: white;">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:18px; color:#A020F0; margin-bottom:65px; font-weight:300;">{author}</div>', unsafe_allow_html=True)
         
-        # Кнопки
-        _, c1, c2, c3, c4, _ = st.columns(6)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
             if st.button("❮"):
                 st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks)
