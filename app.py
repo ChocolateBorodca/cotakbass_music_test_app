@@ -3,150 +3,197 @@ import os
 import random
 import base64
 
-# --- НАСТРОЙКИ ---
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
-# Папки
-MUSIC_DIR, BG_DIR, AVA_DIR = "music", "bg", "avatars"
-for d in [MUSIC_DIR, BG_DIR, AVA_DIR]:
+# Настройки папок
+MUSIC_DIR = "music"
+BG_DIR = "bg"
+for d in [MUSIC_DIR, BG_DIR]:
     if not os.path.exists(d): os.makedirs(d)
 
-# Данные
 tracks = sorted([f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")])
 bg_gifs = [f for f in os.listdir(BG_DIR) if f.endswith(".gif")]
 
-# --- ЖЕСТКАЯ ИНИЦИАЛИЗАЦИЯ (ФИКС ОШИБКИ) ---
-if 'auth' not in st.session_state: 
-    st.session_state.auth = False
-
-# Если user остался строкой от старого кода — сбрасываем его в словарь
-if 'user' not in st.session_state or not isinstance(st.session_state.user, dict):
-    st.session_state.user = {"name": "", "bio": "", "ava": None}
-
+# Session State
 if 'page' not in st.session_state: st.session_state.page = "main"
 if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 
-def get_base64(file):
-    return base64.b64encode(file.getvalue()).decode() if file else None
-
 # Логика фона
-bg_css = "background-color: #000000;"
+bg_html = ""
 if st.session_state.playing and bg_gifs:
     if st.session_state.current_bg is None:
         st.session_state.current_bg = random.choice(bg_gifs)
     try:
         with open(os.path.join(BG_DIR, st.session_state.current_bg), "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
-        bg_css = f'background-image: url("data:image/gif;base64,{encoded}"); background-size: cover; background-position: center;'
-    except: pass
+            data = f.read()
+            encoded = base64.b64encode(data).decode()
+        bg_html = f'background-image: url("data:image/gif;base64,{encoded}"); background-size: cover; background-position: center;'
+    except: bg_html = "background-color: #000000;"
+else:
+    st.session_state.current_bg = None
+    bg_html = "background-color: #000000;"
 
-# --- СТИЛИ ---
+# УЛЬТРА-МАТОВЫЙ CSS
 st.markdown(f"""
     <style>
-    header, footer, #MainMenu, [data-testid="stInputInstructions"], .st-emotion-cache-oc994i {{ display: none !important; }}
+    [data-testid="stInputInstructions"], .st-emotion-cache-1pxm666, [data-baseweb="helper-text"] {{
+        display: none !important;
+        height: 0px !important;
+    }}
+
+    header, footer, .stDeployButton, #MainMenu {{ display: none !important; }}
+    
     html, body, [class*="st-"] {{ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important; }}
-    .stApp {{ {bg_css} transition: background 0.8s ease; }}
-    .stApp::before {{ content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.85); z-index: -1; }}
-
-    .upload-wrapper {{ position: relative; margin: 0 auto; display: flex; align-items: center; justify-content: center; }}
-    [data-testid="stFileUploader"] {{ position: absolute !important; inset: 0 !important; opacity: 0 !important; z-index: 100 !important; cursor: pointer !important; }}
     
-    .bg-draw {{ background: rgba(255,255,255,0.03); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; height: 160px; width: 100%; max-width: 500px; display: flex; align-items: center; justify-content: center; font-size: 30px; color: rgba(160, 32, 240, 0.4); }}
-    .ava-draw {{ width: 130px; height: 130px; background: rgba(255,255,255,0.05); backdrop-filter: blur(30px); border: 2px solid #A020F0; border-radius: 50%; margin-top: -65px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #A020F0; position: relative; z-index: 10; }}
-    .ava-preview {{ width: 100%; height: 100%; object-fit: cover; position: absolute; }}
-
-    div.stButton > button {{ background: rgba(255,255,255,0.02) !important; backdrop-filter: blur(30px) !important; border: 1px solid rgba(160,32,240,0.3) !important; border-radius: 50% !important; color: #A020F0 !important; width: 60px !important; height: 60px !important; transition: 0.3s !important; }}
+    .stApp {{ {bg_html} transition: background 0.8s ease; }}
+    .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.93); z-index: -1; }}
+    audio {{ display: none !important; }}
     
-    div[data-testid="stTextInput"] div[data-baseweb="input"] {{ background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 25px !important; max-width: 350px; margin: 0 auto; }}
-    div[data-testid="stTextInput"] input {{ text-align: center !important; color: white !important; }}
+    /* Стеклянные кнопки навигации с ФИОЛЕТОВЫМ ТЕКСТОМ */
+    div.stButton > button {{
+        background: rgba(255, 255, 255, 0.02) !important;
+        backdrop-filter: blur(40px) !important;
+        -webkit-backdrop-filter: blur(40px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 50% !important;
+        color: #A020F0 !important; /* ТВОЙ ФИОЛЕТОВЫЙ */
+        width: 52px !important; height: 52px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        transition: 0.3s ease !important;
+        font-weight: 600 !important;
+    }}
+
+    .search-title-photo {{
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 8px;
+        text-transform: lowercase;
+        color: #A020F0;
+        text-align: center;
+        margin-bottom: 30px;
+        text-shadow: 0 0 10px rgba(160, 32, 240, 0.5);
+    }}
+
+    /* МАТОВАЯ ПОЛОСА ПОИСКА С ФИОЛЕТОВЫМ ? */
+    div[data-testid="stTextInput"] div[data-baseweb="input"] {{
+        background: rgba(255, 255, 255, 0.03) !important;
+        backdrop-filter: blur(60px) brightness(0.7) !important;
+        -webkit-backdrop-filter: blur(60px) brightness(0.7) !important;
+        border: 1px solid rgba(160, 32, 240, 0.2) !important;
+        border-radius: 22px !important;
+        position: relative;
+    }}
+    
+    div[data-testid="stTextInput"] div[data-baseweb="input"]::after {{
+        content: "?";
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #A020F0;
+        font-weight: 700;
+        font-size: 18px;
+        opacity: 0.8;
+    }}
+
+    div[data-testid="stTextInput"] input {{
+        color: white !important;
+        background: transparent !important;
+        padding: 20px 50px 20px 20px !important;
+        border: none !important;
+    }}
+
     div[data-testid="stTextInput"] label {{ display: none !important; }}
+
+    .track-info {{ font-size: 16px; font-weight: 300; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.02); color: white; }}
+    .app-header {{ font-size: 10px; letter-spacing: 5px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 45px; opacity: 0.5; }}
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# --- ЛОГИКА ---
+# Навигация
+n1, _, n2 = st.columns([0.15, 0.7, 0.15])
+with n1:
+    if st.button("←" if st.session_state.page != "main" else "☰"):
+        st.session_state.page = "main" if st.session_state.page != "main" else "library"
+        st.rerun()
+with n2:
+    if st.button("?"): 
+        st.session_state.page = "search"
+        st.rerun()
 
-if not st.session_state.auth:
-    st.markdown('<h1 style="text-align:center; font-weight:800; margin-bottom:40px;">cotakbass music</h1>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="upload-wrapper" style="max-width:500px; height:160px;"><div class="bg-draw">+</div>', unsafe_allow_html=True)
-    st.file_uploader("bg", key="u_bg")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="upload-wrapper" style="width:130px; height:130px; margin-top:-65px;"><div class="ava-draw">', unsafe_allow_html=True)
-    u_ava = st.file_uploader("ava", key="u_ava")
-    base64_ava = get_base64(u_ava)
-    if base64_ava: st.markdown(f'<img src="data:image/png;base64,{base64_ava}" class="ava-preview">', unsafe_allow_html=True)
-    else: st.write("+")
-    st.markdown('</div></div>', unsafe_allow_html=True)
-    
-    st.write("<br>", unsafe_allow_html=True)
-    u_name = st.text_input("name", placeholder="name", key="reg_name")
-    u_bio = st.text_input("status", placeholder="status", key="reg_bio")
-    
-    st.markdown('<div style="display:flex; justify-content:center; margin-top:30px;">', unsafe_allow_html=True)
-    if st.button("❯"):
-        if u_name:
-            st.session_state.auth = True
-            st.session_state.user["name"] = u_name
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
+if not tracks:
+    st.info("No tracks")
 else:
-    # ПЛЕЕР
-    n1, _, n2 = st.columns([0.15, 0.7, 0.15])
-    with n1:
-        if st.button("☰"): st.session_state.page = "library"; st.rerun()
-    with n2:
-        if st.button("?"): st.session_state.page = "search"; st.rerun()
-
-    if not tracks:
-        st.info("No tracks in /music")
-    else:
-        if st.session_state.page == "search":
-            st.markdown('<div style="text-align:center; letter-spacing:5px; opacity:0.5;">SEARCH</div>', unsafe_allow_html=True)
-            q = st.text_input("", placeholder="напиши хуйню", key="s_q")
-            if q:
-                for t in [x for x in tracks if q.lower() in x.lower()]:
-                    c_t, c_p = st.columns([0.85, 0.15])
-                    with c_t: st.markdown(f"<div style='padding:15px 0; border-bottom:1px solid #111;'>{t.replace('.mp3','')}</div>", unsafe_allow_html=True)
-                    with c_p:
-                        if st.button("▶", key=f"s_{t}"):
-                            st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(t), "main", True
-                            st.rerun()
-
-        elif st.session_state.page == "library":
-            st.markdown('<div style="text-align:center; letter-spacing:5px; opacity:0.5;">FAVORITES</div>', unsafe_allow_html=True)
-            for f in list(st.session_state.favorites):
-                c_t, c_p = st.columns([0.85, 0.15])
-                with c_t: st.markdown(f"<div style='padding:15px 0; border-bottom:1px solid #111;'>{f.replace('.mp3','')}</div>", unsafe_allow_html=True)
-                with c_p:
-                    if st.button("▶", key=f"l_{f}"):
-                        st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(f), "main", True
+    if st.session_state.page == "search":
+        st.markdown('<div class="search-title-photo">search</div>', unsafe_allow_html=True)
+        query = st.text_input("", placeholder="напиши хуйню", key="search_input")
+        
+        if query:
+            filtered = [t for t in tracks if query.lower() in t.lower()]
+            for track in filtered:
+                c_name, c_play = st.columns([0.85, 0.15])
+                with c_name:
+                    st.markdown(f"<div class='track-info'>{track.replace('.mp3', '')}</div>", unsafe_allow_html=True)
+                with c_play:
+                    if st.button("▶", key=f"s_{track}"):
+                        st.session_state.track_index = tracks.index(track)
+                        st.session_state.page = "main"
+                        st.session_state.playing = True
                         st.rerun()
-        
+
+    elif st.session_state.page == "library":
+        st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
+        if not st.session_state.favorites:
+            st.write("<p style='text-align:center; opacity:0.3;'>медиатека пуста</p>", unsafe_allow_html=True)
         else:
-            st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:4px;">COTAKBASS MUSIC</div>', unsafe_allow_html=True)
-            curr = tracks[st.session_state.track_index]
-            name_c = curr.replace(".mp3", "").replace("_", " ")
-            auth, title = name_c.split(", ", 1) if ", " in name_c else ("unknown", name_c)
-            
-            st.markdown(f'<div style="text-align:center; margin-top:10vh;"><div style="font-size:42px; font-weight:700;">{title}</div><div style="color:#A020F0; font-size:18px; margin-bottom:50px;">{auth}</div></div>', unsafe_allow_html=True)
-            
-            _, c1, c2, c3, c4, _ = st.columns(6)
-            with c1:
-                if st.button("❮"): st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks); st.session_state.current_bg = None; st.rerun()
-            with c2:
-                if st.button("Ⅱ" if st.session_state.playing else "▶"): st.session_state.playing = not st.session_state.playing; st.rerun()
-            with c3:
-                if st.button("❯"): st.session_state.track_index = (st.session_state.track_index + 1) % len(tracks); st.session_state.current_bg = None; st.rerun()
-            with c4:
-                is_f = curr in st.session_state.favorites
-                if st.button("💜" if is_f else "🤍"):
-                    if is_f: st.session_state.favorites.remove(curr)
-                    else: st.session_state.favorites.add(curr); st.snow()
-                    st.rerun()
+            for fav in list(st.session_state.favorites):
+                c_name, c_play = st.columns([0.85, 0.15])
+                with c_name:
+                    st.markdown(f"<div class='track-info'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
+                with c_play:
+                    if st.button("▶", key=f"f_{fav}"):
+                        st.session_state.track_index = tracks.index(fav)
+                        st.session_state.page = "main"
+                        st.session_state.playing = True
+                        st.rerun()
+
+    else:
+        # ГЛАВНЫЙ ЭКРАН
+        current_file = tracks[st.session_state.track_index]
+        st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
+        name_clean = current_file.replace(".mp3", "").replace("_", " ")
+        author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
         
-        st.audio(os.path.join(MUSIC_DIR, tracks[st.session_state.track_index]), autoplay=st.session_state.playing)
+        st.markdown(f'<div style="text-align:center; margin-top:10vh;">', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:42px; font-weight:700; margin-bottom:5px; letter-spacing:-1.5px; color: white;">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:18px; color:#A020F0; margin-bottom:65px; font-weight:300;">{author}</div>', unsafe_allow_html=True)
+        
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            if st.button("❮"):
+                st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks)
+                st.session_state.current_bg = None
+                st.rerun()
+        with c2:
+            if st.button("Ⅱ" if st.session_state.playing else "▶"):
+                st.session_state.playing = not st.session_state.playing
+                st.rerun()
+        with c3:
+            if st.button("❯"):
+                st.session_state.track_index = (st.session_state.track_index + 1) % len(tracks)
+                st.session_state.current_bg = None
+                st.rerun()
+        with c4:
+            is_fav = current_file in st.session_state.favorites
+            if st.button("💜" if is_fav else "🤍"):
+                if is_fav: st.session_state.favorites.remove(current_file)
+                else: 
+                    st.session_state.favorites.add(current_file)
+                    st.snow()
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.audio(os.path.join(MUSIC_DIR, tracks[st.session_state.track_index]), autoplay=st.session_state.playing)
