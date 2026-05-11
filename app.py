@@ -38,7 +38,7 @@ else:
     st.session_state.current_bg = None
     bg_html = "background-color: #000000;"
 
-# Стили (Исправляем сетку поиска и кнопок)
+# УЛЬТРА-CSS: Ломаем стандартные стили Streamlit для поиска
 st.markdown(f"""
     <style>
     header, footer, .stDeployButton, #MainMenu {{visibility: hidden !important;}}
@@ -49,7 +49,7 @@ st.markdown(f"""
     
     .app-header {{ font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 30px; }}
 
-    /* Стеклянные кнопки (Круглые) */
+    /* Стеклянные кнопки управления */
     div.stButton > button {{
         background: rgba(255, 255, 255, 0.05) !important;
         backdrop-filter: blur(20px) !important;
@@ -61,33 +61,41 @@ st.markdown(f"""
         margin: auto !important;
     }}
 
-    /* Полоса поиска (Ультра-стекло) */
-    div[data-testid="stTextInput"] input {{
-        background: rgba(255, 255, 255, 0.03) !important;
+    /* ПОЛНОСТЬЮ СТЕКЛЯННЫЙ ПОИСК */
+    div[data-testid="stTextInput"] {{
+        background: transparent !important;
+    }}
+    div[data-testid="stTextInput"] div[data-baseweb="input"] {{
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(20px) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 15px !important;
         color: white !important;
-        backdrop-filter: blur(15px) !important;
-        padding: 15px !important;
     }}
-    div[data-testid="stTextInput"] label {{ display: none !important; }} /* Убираем надпись над поиском */
+    div[data-testid="stTextInput"] input {{
+        background: transparent !important;
+        color: white !important;
+        padding: 15px !important;
+        border: none !important;
+    }}
+    div[data-testid="stTextInput"] label {{ display: none !important; }}
 
-    /* Список треков в поиске/библиотеке */
-    .track-item {{
+    /* Кнопки в списке */
+    .track-row-custom {{
         display: flex; justify-content: space-between; align-items: center;
-        padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# Навигация (Разносим кнопки по краям)
-nav_col1, _, nav_col2 = st.columns([0.15, 0.7, 0.15])
-with nav_col1:
+# Навигация (Библиотека | Поиск)
+nav_l, _, nav_r = st.columns([0.2, 0.6, 0.2])
+with nav_l:
     if st.button("←" if st.session_state.page != "main" else "☰"):
         st.session_state.page = "main" if st.session_state.page != "main" else "library"
         st.rerun()
-with nav_col2:
-    if st.button("🔍"):
+with nav_r:
+    if st.button("○"): # Заменили лупу на круг
         st.session_state.page = "search"
         st.rerun()
 
@@ -97,11 +105,13 @@ else:
     # --- ЭКРАН ПОИСКА ---
     if st.session_state.page == "search":
         st.markdown('<div class="app-header">search</div>', unsafe_allow_html=True)
-        # Пустое поле без подсказок
-        query = st.text_input("", value="", placeholder="...")
+        # Обработка Enter реализована через стандартный механизм Streamlit
+        query = st.text_input("", placeholder="Напечатай и нажми Enter...", key="search_input")
         
         if query:
             filtered = [t for t in tracks if query.lower() in t.lower()]
+            if not filtered:
+                st.write("<p style='text-align:center; opacity:0.5;'>Ничего не найдено</p>", unsafe_allow_html=True)
             for track in filtered:
                 c_name, c_play = st.columns([0.8, 0.2])
                 with c_name:
