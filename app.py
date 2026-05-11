@@ -23,7 +23,7 @@ if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 
 # Твоя новая PNG ссылка (с обходом кэша)
-ICON_URL = "https://githubusercontent.com"
+ICON_URL = "https://raw.githubusercontent.com/ChocolateBorodca/cotakbass_music_test_app/refs/heads/main/logo.png"
 
 # Логика GIF-фона
 bg_style = ""
