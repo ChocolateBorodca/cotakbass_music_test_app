@@ -1,50 +1,81 @@
 import streamlit as st
 import os
 
-st.set_page_config(page_title="Glass Music", layout="wide")
+st.set_page_config(page_title="Liquid Glass Player", layout="wide")
 
-# Ультра-стеклянный CSS с навигацией
+# Ультра-дизайн Liquid Glass
 st.markdown("""
     <style>
+    /* Анимированный фон как на фото */
+    .stApp {
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e, #000000);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        color: #FFFFFF;
+    }
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Шрифты Apple */
     html, body, [class*="st-"] {
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
     }
-    .stApp { background-color: #000000; color: #FFFFFF; }
-    
-    /* Стеклянная кнопка библиотеки в углу */
-    .nav-button-container {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
+
+    /* Основная стеклянная карточка */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(50px) saturate(180%);
+        -webkit-backdrop-filter: blur(50px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 40px;
+        padding: 50px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        margin: auto;
+        max-width: 600px;
+        text-align: center;
     }
 
-    /* Ультра-стекло для всех кнопок */
+    /* Стеклянные кнопки-капли */
     div.stButton > button {
-        background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(40px) brightness(1.3) !important;
-        -webkit-backdrop-filter: blur(40px) brightness(1.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 20px !important;
+        background: rgba(255, 255, 255, 0.07) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 50px !important; /* Круглые края как у капли */
         color: white !important;
-        transition: 0.3s;
+        font-weight: 300 !important;
+        height: 60px !important;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: inset 0 0 15px rgba(255,255,255,0.05);
     }
     div.stButton > button:hover {
         background: rgba(255, 255, 255, 0.15) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(160, 100, 255, 0.3);
     }
 
-    /* Стили текста */
-    .track-title { font-size: 42px; font-weight: 700; margin-bottom: 0px; letter-spacing: -1px; }
-    .track-author { font-size: 20px; opacity: 0.4; margin-bottom: 40px; }
-    .lib-title { font-size: 32px; font-weight: 700; margin-bottom: 30px; }
+    /* Текст */
+    .track-title { 
+        font-size: 48px; 
+        font-weight: 700; 
+        letter-spacing: -2px;
+        background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 5px;
+    }
+    .track-author { font-size: 22px; opacity: 0.4; font-weight: 300; margin-bottom: 40px; }
     
-    /* Убираем стандартные отступы Streamlit */
-    .block-container { padding-top: 2rem !important; }
+    /* Убираем лишний UI Streamlit */
+    header {visibility: hidden;}
+    .block-container {padding-top: 5rem !important;}
     </style>
     """, unsafe_allow_html=True)
 
-# Инициализация данных
+# Логика треков
 MUSIC_DIR = "music"
 if not os.path.exists(MUSIC_DIR): os.makedirs(MUSIC_DIR)
 tracks = sorted([f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")])
@@ -53,56 +84,45 @@ if 'page' not in st.session_state: st.session_state.page = "main"
 if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = []
 
-# КНОПКА В УГЛУ (Слева сверху)
-col_nav, _ = st.columns([1, 10])
-with col_nav:
-    if st.session_state.page == "main":
-        if st.button("Favorites"):
-            st.session_state.page = "library"
-            st.rerun()
-    else:
-        if st.button("← Back"):
-            st.session_state.page = "main"
-            st.rerun()
-
-# --- ЛОГИКА ЭКРАНОВ ---
+# Верхняя навигация (Библиотека)
+c_nav, _ = st.columns([1, 4])
+with c_nav:
+    label = "← Назад" if st.session_state.page == "library" else " Библиотека"
+    if st.button(label):
+        st.session_state.page = "main" if st.session_state.page == "library" else "library"
+        st.rerun()
 
 if not tracks:
-    st.info("Загрузи музыку в папку music/")
+    st.info("Положи треки в папку music/")
 else:
     current_file = tracks[st.session_state.track_index]
-    
-    # ЭКРАН: БИБЛИОТЕКА
-    if st.session_state.page == "library":
-        st.markdown('<div class="lib-title">Любимые треки</div>', unsafe_allow_html=True)
-        if not st.session_state.favorites:
-            st.write("Список пуст. Нажми ♥ на главном экране.")
-        else:
-            for i, fav in enumerate(st.session_state.favorites):
-                # Стеклянная плашка трека
-                if st.button(f"🎵 {fav.replace('.mp3', '')}", key=f"fav_{i}"):
-                    # Находим индекс этого трека в общем списке, чтобы включить его
-                    st.session_state.track_index = tracks.index(fav)
-                    st.session_state.page = "main"
-                    st.rerun()
 
-    # ЭКРАН: ПЛЕЕР (ГЛАВНЫЙ)
+    if st.session_state.page == "library":
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.markdown('<div class="track-title" style="font-size: 32px">Любимое</div>', unsafe_allow_html=True)
+        for i, fav in enumerate(st.session_state.favorites):
+            if st.button(f"✨ {fav.replace('.mp3', '')}", key=f"fav_{i}"):
+                st.session_state.track_index = tracks.index(fav)
+                st.session_state.page = "main"
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
     else:
+        # Главный экран плеера
         display_name = current_file.replace(".mp3", "")
         author, title = display_name.split(" - ", 1) if " - " in display_name else ("Unknown", display_name)
         
-        st.markdown(f'<div style="text-align: center; margin-top: 10vh;">', unsafe_allow_html=True)
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
         
-        # Кнопки управления
-        _, c1, c2, c3, c4, _ = st.columns([1, 1, 1, 1, 1, 1])
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
             if st.button("❮"):
                 st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks)
                 st.rerun()
         with c2:
-            st.button("▶ / Ⅱ")
+            st.button("▶")
         with c3:
             if st.button("❯"):
                 st.session_state.track_index = (st.session_state.track_index + 1) % len(tracks)
@@ -111,9 +131,9 @@ else:
             if st.button("♥"):
                 if current_file not in st.session_state.favorites:
                     st.session_state.favorites.append(current_file)
-                    st.toast("Добавлено в медиатеку")
+                    st.toast("Сохранено в стекле")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ОБЩИЙ ПЛЕЕР (Всегда внизу)
+    # Аудиомодуль (стилизованный)
     st.write("")
     st.audio(os.path.join(MUSIC_DIR, current_file))
