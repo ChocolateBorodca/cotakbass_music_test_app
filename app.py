@@ -3,9 +3,14 @@ import os
 import random
 import base64
 
-st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
+# Ультра-настройка страницы
+st.set_page_config(
+    page_title="cotakbass music", 
+    layout="wide", 
+    initial_sidebar_state="collapsed"
+)
 
-# Настройки папок
+# Папки
 MUSIC_DIR = "music"
 BG_DIR = "bg"
 for d in [MUSIC_DIR, BG_DIR]:
@@ -14,14 +19,14 @@ for d in [MUSIC_DIR, BG_DIR]:
 tracks = sorted([f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")])
 bg_gifs = [f for f in os.listdir(BG_DIR) if f.endswith(".gif")]
 
+# Инициализация
 if 'page' not in st.session_state: st.session_state.page = "main"
 if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 
-# Твоя новая PNG ссылка
-ICON_URL = "https://raw.githubusercontent.com/ChocolateBorodca/cotakbass_music_test_app/refs/heads/main/logo.png"
+ICON_URL = "https://githubusercontent.com"
 
 # Логика GIF-фона
 bg_style = ""
@@ -39,107 +44,107 @@ else:
     st.session_state.current_bg = None
     bg_style = "background-color: #000000;"
 
-# УЛЬТРА-ФИКС ИКОНКИ (через JavaScript + CSS)
+# УЛЬТРА-CSS (Убираем Streamlit по максимуму)
 st.markdown(f"""
-    <script>
-        // Принудительно меняем иконки через JS после загрузки
-        var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
-        link.type = 'image/png';
-        link.rel = 'shortcut icon';
-        link.href = '{ICON_URL}';
-        document.getElementsByTagName('head')[0].appendChild(link);
-        
-        var appleLink = document.createElement('link');
-        appleLink.rel = 'apple-touch-icon';
-        appleLink.href = '{ICON_URL}';
-        document.getElementsByTagName('head')[0].appendChild(appleLink);
-    </script>
-    
     <style>
+    /* Прячем всё стандартное */
+    header, footer, .stDeployButton, #MainMenu {{visibility: hidden !important;}}
+    [data-testid="stHeader"] {{background: rgba(0,0,0,0) !important;}}
+    .block-container {{padding: 1rem 1rem !important;}}
+    
     html, body, [class*="st-"] {{
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
+        background-color: #000000;
     }}
+    
     .stApp {{
         {bg_style}
-        transition: background 1s ease-in-out;
+        transition: background 0.8s ease;
     }}
+    
     .stApp::before {{
         content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0, 0, 0, 0.75); z-index: -1;
     }}
+    
     audio {{ display: none !important; }}
     
     .app-header {{
-        font-size: 12px; font-weight: 500; letter-spacing: 3px;
+        font-size: 11px; font-weight: 600; letter-spacing: 4px;
         text-transform: lowercase; color: #A020F0;
-        margin-bottom: 20px; text-align: center; opacity: 0.8;
+        margin-top: 10px; margin-bottom: 30px; text-align: center; opacity: 0.7;
     }}
     
     .track-title {{ 
-        font-size: clamp(28px, 8vw, 48px); font-weight: 700; 
-        letter-spacing:-1.5px; text-align: center; margin-top: 20px;
+        font-size: clamp(32px, 9vw, 52px); font-weight: 800; 
+        letter-spacing:-2px; text-align: center; margin-top: 40px;
+        line-height: 1.1;
     }}
+    
     .track-author {{ 
-        font-size: clamp(16px, 4vw, 20px); color:#A020F0; 
-        margin-bottom: 50px; opacity:0.8; text-align: center;
+        font-size: clamp(16px, 5vw, 22px); color:#A020F0; 
+        margin-bottom: 60px; opacity:0.9; text-align: center;
+        font-weight: 300;
     }}
 
+    /* Кнопки управления */
     div.stButton > button {{
         background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(160, 32, 240, 0.2) !important;
+        backdrop-filter: blur(25px) !important;
+        border: 1px solid rgba(160, 32, 240, 0.15) !important;
         border-radius: 50% !important;
         color: white !important;
-        width: 65px !important; height: 65px !important;
+        width: 70px !important; height: 70px !important;
         display: flex; align-items: center; justify-content: center;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: 0.2s ease !important;
         margin: auto;
     }}
     
-    div.stButton > button:active {{ transform: scale(0.9); }}
-    
-    /* Убираем лишние элементы Streamlit */
-    header {{visibility: hidden;}}
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
-    </style>
-    
-    <!-- Мета-теги для закрепления -->
+    div.stButton > button:active {{
+        transform: scale(0.9) !important;
+        background: rgba(160, 32, 240, 0.2) !important;
+    }}
+
+    /* Ссылки на иконки */
     <link rel="apple-touch-icon" href="{ICON_URL}">
-    <link rel="icon" type="image/png" href="{ICON_URL}">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" href="{ICON_URL}">
+    </style>
     """, unsafe_allow_html=True)
 
-# Рендеринг интерфейса (оставляем без изменений)
-nav_c, _ = st.columns([0.2, 0.8])
-with nav_c:
+# Верхняя навигация
+c_nav, _ = st.columns([0.2, 0.8])
+with c_nav:
     if st.button("←" if st.session_state.page == "library" else "☰"):
         st.session_state.page = "library" if st.session_state.page == "main" else "main"
         st.rerun()
 
 if not tracks:
-    st.info("Добавь музыку в music/")
+    st.info("No tracks in /music")
 else:
     current_file = tracks[st.session_state.track_index]
+
     if st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
         for fav in list(st.session_state.favorites):
-            col_t, col_b = st.columns([0.75, 0.25])
-            with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
+            col_t, col_b = st.columns([0.8, 0.2])
+            with col_t: st.markdown(f"<div style='padding:15px 0; font-size:18px; border-bottom:1px solid #111;'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
             with col_b:
-                if st.button("▶", key=f"fav_play_{fav}"):
+                if st.button("▶", key=f"f_{fav}"):
                     st.session_state.track_index = tracks.index(fav)
                     st.session_state.page = "main"
                     st.session_state.playing = True
                     st.rerun()
     else:
+        # Плеер
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
+        
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
+        
         st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
         
+        # Кнопки
         c1, c2, c3, c4 = st.columns(4)
         with c1:
             if st.button("❮"):
