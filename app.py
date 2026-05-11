@@ -1,69 +1,54 @@
 import streamlit as st
 import os
 
-st.set_page_config(page_title="COTKBASS MUSIC", layout="wide")
+st.set_page_config(page_title="cotakbass music", layout="wide")
 
-# Ультра-минималистичный Apple CSS
+# Ультра-минимализм и анимации
 st.markdown("""
     <style>
-    /* Вернули Apple шрифты */
+    /* Шрифт Apple */
     html, body, [class*="st-"] {
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif !important;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
     }
-
     .stApp { background-color: #000000; color: #FFFFFF; }
-    
-    /* Скрываем стандартный аудио-плеер (серую линию) */
     audio { display: none !important; }
-    
-    /* Название приложения вместо пустого блока */
+
+    /* Название приложения */
     .app-header {
-        font-size: 14px;
-        font-weight: 600;
-        letter-spacing: 2px;
-        text-transform: uppercase;
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 3px;
+        text-transform: lowercase;
         color: #A020F0;
-        margin-bottom: 60px;
+        margin-bottom: 50px;
         text-align: center;
-        opacity: 0.8;
+        opacity: 0.9;
     }
 
-    /* Основная стеклянная панель */
-    .player-container {
-        text-align: center;
-        margin-top: 5vh;
-    }
-
-    /* Названия */
-    .track-title { 
-        font-size: 38px; 
-        font-weight: 700; 
-        letter-spacing: -1px; 
-        margin-bottom: 8px; 
-        color: white;
-    }
-    .track-author { 
-        font-size: 18px; 
-        color: #A020F0; 
-        font-weight: 400; 
-        margin-bottom: 50px; 
-    }
-
-    /* Ультра-стеклянные кнопки */
+    /* Анимация всплытия кнопок */
     div.stButton > button {
-        background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(20px) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
         border: 1px solid rgba(160, 32, 240, 0.2) !important;
-        border-radius: 50% !important;
+        border-radius: 50px !important;
         color: white !important;
-        width: 70px !important;
-        height: 70px !important;
-        transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }
     div.stButton > button:hover {
+        transform: translateY(-5px) scale(1.1) !important;
         border-color: #A020F0 !important;
-        background: rgba(160, 32, 240, 0.1) !important;
-        transform: scale(1.1);
+        box-shadow: 0 10px 20px rgba(160, 32, 240, 0.2);
+    }
+
+    /* Горизонтальный трек в библиотеке */
+    .lib-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 25px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     header {visibility: hidden;}
@@ -80,42 +65,45 @@ if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 
-# Навигация (Кнопка меню в углу)
-nav_col, _ = st.columns([0.1, 0.9])
-with nav_col:
-    if st.button("☰" if st.session_state.page == "main" else "←"):
+# Навигация
+nav_c, _ = st.columns([0.1, 0.9])
+with nav_c:
+    if st.button("←" if st.session_state.page == "library" else "☰"):
         st.session_state.page = "library" if st.session_state.page == "main" else "main"
         st.rerun()
 
 if not tracks:
-    st.info("Добавь музыку в /music")
+    st.info("Добавь музыку в папку music/")
 else:
     current_file = tracks[st.session_state.track_index]
 
     if st.session_state.page == "library":
-        st.markdown('<div class="app-header">Favorites</div>', unsafe_allow_html=True)
+        st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
         if not st.session_state.favorites:
-            st.write("<p style='text-align:center; opacity:0.5;'>Тут пусто</p>", unsafe_allow_html=True)
+            st.write("<p style='text-align:center; opacity:0.5;'>Пусто</p>", unsafe_allow_html=True)
         else:
             for fav in list(st.session_state.favorites):
-                if st.button(f" {fav.replace('.mp3', '')}", key=fav, use_container_width=True):
-                    st.session_state.track_index = tracks.index(fav)
-                    st.session_state.page = "main"
-                    st.session_state.playing = True
-                    st.rerun()
+                col_name, col_btn = st.columns([0.85, 0.15])
+                with col_name:
+                    st.markdown(f"<div style='padding-top:10px;'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
+                with col_btn:
+                    if st.button("▶", key=f"play_{fav}"):
+                        st.session_state.track_index = tracks.index(fav)
+                        st.session_state.page = "main"
+                        st.session_state.playing = True
+                        st.rerun()
 
     else:
-        # Плеер
-        st.markdown('<div class="app-header">COTKBASS MUSIC</div>', unsafe_allow_html=True)
+        # Главный экран
+        st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
         
         display_name = current_file.replace(".mp3", "").replace("_", " ")
-        author, title = display_name.split(", ", 1) if ", " in display_name else ("Unknown Artist", display_name)
+        author, title = display_name.split(", ", 1) if ", " in display_name else ("unknown artist", display_name)
         
-        st.markdown('<div class="player-container">', unsafe_allow_html=True)
-        st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center; margin-top:5vh;">', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:42px; font-weight:700; margin-bottom:10px;">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:18px; color:#A020F0; margin-bottom:60px;">{author}</div>', unsafe_allow_html=True)
         
-        # Кнопки управления (ровно по центру)
         _, c1, c2, c3, c4, _ = st.columns([1, 1, 1, 1, 1, 1])
         with c1:
             if st.button("❮"):
@@ -133,11 +121,13 @@ else:
         with c4:
             is_fav = current_file in st.session_state.favorites
             if st.button("💜" if is_fav else "🤍"):
-                if is_fav: st.session_state.favorites.remove(current_file)
-                else: st.session_state.favorites.add(current_file)
+                if is_fav:
+                    st.session_state.favorites.remove(current_file)
+                else:
+                    st.session_state.favorites.add(current_file)
+                    st.snow() # Эффект "вылетающих" снежинок/частиц как аналог сердечек
                 st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Сам аудио-движок (теперь скрыт)
-    audio_path = os.path.join(MUSIC_DIR, current_file)
-    st.audio(audio_path, autoplay=st.session_state.playing)
+    # Аудио движок
+    st.audio(os.path.join(MUSIC_DIR, current_file), autoplay=st.session_state.playing)
