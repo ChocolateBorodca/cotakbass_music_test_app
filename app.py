@@ -5,7 +5,7 @@ import base64
 
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
-# Папки
+# Настройки папок
 MUSIC_DIR = "music"
 BG_DIR = "bg"
 for d in [MUSIC_DIR, BG_DIR]:
@@ -36,14 +36,12 @@ else:
     st.session_state.current_bg = None
     bg_html = "background-color: #000000;"
 
-# УЛЬТРА-МАТОВЫЙ CSS (Стиль как на фото)
+# УЛЬТРА-МАТОВЫЙ CSS
 st.markdown(f"""
     <style>
-    /* Полная блокировка системных надписей */
     [data-testid="stInputInstructions"], .st-emotion-cache-1pxm666, [data-baseweb="helper-text"] {{
         display: none !important;
         height: 0px !important;
-        visibility: hidden !important;
     }}
 
     header, footer, .stDeployButton, #MainMenu {{ display: none !important; }}
@@ -54,51 +52,51 @@ st.markdown(f"""
     .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.93); z-index: -1; }}
     audio {{ display: none !important; }}
     
-    /* Стеклянные кнопки навигации */
+    /* Стеклянные кнопки навигации с ФИОЛЕТОВЫМ ТЕКСТОМ */
     div.stButton > button {{
         background: rgba(255, 255, 255, 0.02) !important;
         backdrop-filter: blur(40px) !important;
         -webkit-backdrop-filter: blur(40px) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 50% !important;
-        color: white !important;
+        color: #A020F0 !important; /* ТВОЙ ФИОЛЕТОВЫЙ */
         width: 52px !important; height: 52px !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
         transition: 0.3s ease !important;
+        font-weight: 600 !important;
     }}
 
-    /* СТИЛЬ SEARCH КАК НА ФОТО */
     .search-title-photo {{
         font-size: 14px;
         font-weight: 500;
         letter-spacing: 8px;
         text-transform: lowercase;
-        color: #4B0082; /* Глубокий фиолетовый неон */
+        color: #A020F0;
         text-align: center;
         margin-bottom: 30px;
-        opacity: 0.8;
-        text-shadow: 0 0 10px rgba(75, 0, 130, 0.5);
+        text-shadow: 0 0 10px rgba(160, 32, 240, 0.5);
     }}
 
-    /* МАТОВАЯ ПОЛОСА ПОИСКА С ЛУПОЙ */
+    /* МАТОВАЯ ПОЛОСА ПОИСКА С ФИОЛЕТОВЫМ ? */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {{
         background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(60px) brightness(0.7) !important;
         -webkit-backdrop-filter: blur(60px) brightness(0.7) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(160, 32, 240, 0.2) !important;
         border-radius: 22px !important;
         position: relative;
     }}
     
-    /* Иконка лупы внутри полосы */
     div[data-testid="stTextInput"] div[data-baseweb="input"]::after {{
-        content: "🔍";
+        content: "?";
         position: absolute;
         right: 20px;
         top: 50%;
         transform: translateY(-50%);
-        opacity: 0.3;
-        font-size: 16px;
+        color: #A020F0;
+        font-weight: 700;
+        font-size: 18px;
+        opacity: 0.8;
     }}
 
     div[data-testid="stTextInput"] input {{
@@ -122,7 +120,7 @@ with n1:
         st.session_state.page = "main" if st.session_state.page != "main" else "library"
         st.rerun()
 with n2:
-    if st.button("?"): # Кнопка в стиле "поиск/вопрос"
+    if st.button("?"): 
         st.session_state.page = "search"
         st.rerun()
 
