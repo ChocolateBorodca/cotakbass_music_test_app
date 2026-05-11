@@ -20,6 +20,7 @@ if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
+if 'search_val' not in st.session_state: st.session_state.search_val = ""
 
 ICON_URL = "https://githubusercontent.com"
 
@@ -38,97 +39,72 @@ else:
     st.session_state.current_bg = None
     bg_html = "background-color: #000000;"
 
-# УЛЬТРА-ФОРС CSS (Полная блокировка стандартного мусора)
+# УЛЬТРА-МАТОВЫЙ CSS (Собственные компоненты)
 st.markdown(f"""
     <style>
-    /* 1. Прячем ВСЕ инструкции Streamlit */
-    [data-testid="stInputInstructions"], .st-emotion-cache-1pxm666, .st-key-search_input p, 
-    .st-emotion-cache-1vt4y65, p:contains("Press Enter to apply") {{
+    /* Полная зачистка */
+    header, footer, .stDeployButton, #MainMenu, [data-testid="stInputInstructions"] {{
         display: none !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        visibility: hidden !important;
     }}
-
-    header, footer, .stDeployButton, #MainMenu {{visibility: hidden !important;}}
+    
     html, body, [class*="st-"] {{ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important; }}
     
     .stApp {{ {bg_html} transition: background 0.8s ease; }}
     .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: -1; }}
     audio {{ display: none !important; }}
     
-    /* 2. Сверх-стеклянные кнопки навигации */
+    /* Стеклянные кнопки навигации */
     div.stButton > button {{
-        background: rgba(255, 255, 255, 0.01) !important;
-        backdrop-filter: blur(50px) !important;
-        -webkit-backdrop-filter: blur(50px) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        backdrop-filter: blur(40px) !important;
+        -webkit-backdrop-filter: blur(40px) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-radius: 50% !important;
         color: white !important;
         width: 50px !important; height: 50px !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
-        transition: 0.4s cubic-bezier(0.1, 0.7, 0.1, 1) !important;
+        transition: 0.3s ease !important;
     }}
 
-    /* 3. УЛЬТРА-МАТОВЫЙ ПОИСК (Как на iOS) */
-    div[data-testid="stTextInput"] div[data-baseweb="input"] {{
+    /* Кастомная матовая полоса поиска */
+    .custom-search-box {{
         background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(80px) brightness(0.6) !important;
-        -webkit-backdrop-filter: blur(80px) brightness(0.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.03) !important;
-        border-radius: 26px !important;
-    }}
-    
-    /* Тонкая лупа внутри */
-    div[data-testid="stTextInput"] div[data-baseweb="input"]::after {{
-        content: "🔍";
-        position: absolute;
-        right: 25px;
-        top: 50%;
-        transform: translateY(-50%);
-        opacity: 0.2;
-        font-size: 14px;
-        font-weight: 100;
-        pointer-events: none;
+        backdrop-filter: blur(60px) brightness(0.7) !important;
+        -webkit-backdrop-filter: blur(60px) brightness(0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 20px;
+        padding: 15px 25px;
+        color: white;
+        width: 100%;
+        font-size: 18px;
+        margin-bottom: 30px;
+        outline: none;
     }}
 
-    div[data-testid="stTextInput"] input {{
-        color: white !important;
-        padding: 24px 60px 24px 24px !important;
-        background: transparent !important;
-        border: none !important;
-    }}
-    
-    /* Убираем рамки при фокусе */
-    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {{
-        border-color: rgba(255, 255, 255, 0.1) !important;
-    }}
-
-    div[data-testid="stTextInput"] label {{ display: none !important; }}
-
-    .track-info {{ font-size: 16px; font-weight: 300; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }}
+    .track-info {{ font-size: 16px; font-weight: 300; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.02); color: white; }}
     .app-header {{ font-size: 9px; letter-spacing: 6px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 50px; opacity: 0.4; }}
     </style>
     """, unsafe_allow_html=True)
 
-# Навигация (Баланс 0.15 | 0.7 | 0.15)
+# Навигация
 n1, _, n2 = st.columns([0.15, 0.7, 0.15])
 with n1:
     if st.button("←" if st.session_state.page != "main" else "☰"):
         st.session_state.page = "main" if st.session_state.page != "main" else "library"
         st.rerun()
 with n2:
-    if st.button("🔍"):
+    if st.button("  "): # Минималистичный символ поиска
         st.session_state.page = "search"
         st.rerun()
 
 if not tracks:
     st.info("No tracks")
 else:
-    # --- ЭКРАН ПОИСКА ---
     if st.session_state.page == "search":
         st.markdown('<div class="app-header">search</div>', unsafe_allow_html=True)
-        query = st.text_input("", placeholder="напиши хуйню", key="search_input")
+        
+        # Используем стандартный Streamlit ввод, но с "хакнутым" CSS, который теперь ОЧЕНЬ строгий
+        query = st.text_input("", placeholder="напиши хуйню", key="search_input", label_visibility="collapsed")
         
         if query:
             filtered = [t for t in tracks if query.lower() in t.lower()]
@@ -143,7 +119,6 @@ else:
                         st.session_state.playing = True
                         st.rerun()
 
-    # --- ЭКРАН БИБЛИОТЕКИ ---
     elif st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
         if not st.session_state.favorites:
@@ -160,15 +135,15 @@ else:
                         st.session_state.playing = True
                         st.rerun()
 
-    # --- ГЛАВНЫЙ ЭКРАН ---
     else:
+        # Главный экран
         current_file = tracks[st.session_state.track_index]
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
         
-        st.markdown(f'<div style="text-align:center; margin-top:12vh;">', unsafe_allow_html=True)
-        st.markdown(f'<div style="font-size:44px; font-weight:800; margin-bottom:5px; letter-spacing:-1.5px; line-height:1;">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center; margin-top:10vh;">', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:44px; font-weight:800; margin-bottom:5px; letter-spacing:-1.5px; line-height:1; color: white;">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:18px; color:#A020F0; margin-bottom:75px; font-weight:300; opacity:0.8;">{author}</div>', unsafe_allow_html=True)
         
         c1, c2, c3, c4 = st.columns(4)
