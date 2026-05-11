@@ -29,7 +29,7 @@ if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 ICON_URL = "https://githubusercontent.com"
 
 # Логика GIF-фона
-bg_style = ""
+bg_html = ""
 if st.session_state.playing and bg_gifs:
     if st.session_state.current_bg is None:
         st.session_state.current_bg = random.choice(bg_gifs)
@@ -37,81 +37,83 @@ if st.session_state.playing and bg_gifs:
         with open(os.path.join(BG_DIR, st.session_state.current_bg), "rb") as f:
             data = f.read()
             encoded = base64.b64encode(data).decode()
-        bg_style = f'background-image: url("data:image/gif;base64,{encoded}"); background-size: cover; background-position: center;'
+        bg_html = f'background-image: url("data:image/gif;base64,{encoded}"); background-size: cover; background-position: center;'
     except:
-        bg_style = "background-color: #000000;"
+        bg_html = "background-color: #000000;"
 else:
     st.session_state.current_bg = None
-    bg_style = "background-color: #000000;"
+    bg_html = "background-color: #000000;"
 
-# УЛЬТРА-CSS (Убираем Streamlit по максимуму)
+# УЛЬТРА-CSS (Фикс кнопок и возврат GIF)
 st.markdown(f"""
     <style>
-    /* Прячем всё стандартное */
+    /* Прячем всё лишнее */
     header, footer, .stDeployButton, #MainMenu {{visibility: hidden !important;}}
-    [data-testid="stHeader"] {{background: rgba(0,0,0,0) !important;}}
-    .block-container {{padding: 1rem 1rem !important;}}
     
     html, body, [class*="st-"] {{
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
-        background-color: #000000;
     }}
     
     .stApp {{
-        {bg_style}
-        transition: background 0.8s ease;
+        {bg_html}
+        transition: background 0.8s ease-in-out;
     }}
     
+    /* Затемнение фона */
     .stApp::before {{
         content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.75); z-index: -1;
+        background: rgba(0, 0, 0, 0.7); z-index: -1;
     }}
     
     audio {{ display: none !important; }}
     
     .app-header {{
-        font-size: 11px; font-weight: 600; letter-spacing: 4px;
+        font-size: 12px; font-weight: 600; letter-spacing: 3px;
         text-transform: lowercase; color: #A020F0;
-        margin-top: 10px; margin-bottom: 30px; text-align: center; opacity: 0.7;
+        margin-top: 10px; margin-bottom: 30px; text-align: center;
     }}
     
     .track-title {{ 
-        font-size: clamp(32px, 9vw, 52px); font-weight: 800; 
-        letter-spacing:-2px; text-align: center; margin-top: 40px;
-        line-height: 1.1;
+        font-size: clamp(30px, 8vw, 48px); font-weight: 700; 
+        text-align: center; margin-top: 20px; line-height: 1.2;
     }}
     
     .track-author {{ 
-        font-size: clamp(16px, 5vw, 22px); color:#A020F0; 
-        margin-bottom: 60px; opacity:0.9; text-align: center;
-        font-weight: 300;
+        font-size: 18px; color: #A020F0; margin-bottom: 50px; 
+        text-align: center; opacity: 0.8;
     }}
 
-    /* Кнопки управления */
+    /* ИСПРАВЛЕННЫЕ КНОПКИ (Без черных квадратов) */
     div.stButton > button {{
         background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(25px) !important;
-        border: 1px solid rgba(160, 32, 240, 0.15) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(160, 32, 240, 0.3) !important;
         border-radius: 50% !important;
         color: white !important;
-        width: 70px !important; height: 70px !important;
-        display: flex; align-items: center; justify-content: center;
-        transition: 0.2s ease !important;
-        margin: auto;
+        width: 65px !important; height: 65px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
+        margin: auto !important;
+        transition: 0.3s !important;
     }}
     
-    div.stButton > button:active {{
-        transform: scale(0.9) !important;
-        background: rgba(160, 32, 240, 0.2) !important;
+    div.stButton > button:hover {{
+        border-color: #A020F0 !important;
+        transform: scale(1.1);
     }}
 
-    /* Ссылки на иконки */
+    div.stButton > button p {{
+        background: transparent !important; /* Убираем черную подложку текста внутри кнопки */
+        margin: 0 !important;
+    }}
+
+    /* Мета-теги для иконки */
     <link rel="apple-touch-icon" href="{ICON_URL}">
     <link rel="icon" href="{ICON_URL}">
     </style>
     """, unsafe_allow_html=True)
 
-# Верхняя навигация
+# Навигация
 c_nav, _ = st.columns([0.2, 0.8])
 with c_nav:
     if st.button("←" if st.session_state.page == "library" else "☰"):
@@ -127,7 +129,7 @@ else:
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
         for fav in list(st.session_state.favorites):
             col_t, col_b = st.columns([0.8, 0.2])
-            with col_t: st.markdown(f"<div style='padding:15px 0; font-size:18px; border-bottom:1px solid #111;'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
+            with col_t: st.markdown(f"<div style='padding:15px 0; font-size:16px; border-bottom:1px solid #222;'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
             with col_b:
                 if st.button("▶", key=f"f_{fav}"):
                     st.session_state.track_index = tracks.index(fav)
@@ -135,7 +137,7 @@ else:
                     st.session_state.playing = True
                     st.rerun()
     else:
-        # Плеер
+        # Главный экран
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
         
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
@@ -152,7 +154,8 @@ else:
                 st.session_state.current_bg = None
                 st.rerun()
         with c2:
-            if st.button("Ⅱ" if st.session_state.playing else "▶"):
+            icon = "Ⅱ" if st.session_state.playing else "▶"
+            if st.button(icon):
                 st.session_state.playing = not st.session_state.playing
                 st.rerun()
         with c3:
