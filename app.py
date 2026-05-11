@@ -3,29 +3,29 @@ import os
 import random
 import base64
 
-# Установка конфигурации
+# Конфигурация приложения
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
-# Настройки папок
+# Папки
 MUSIC_DIR = "music"
 BG_DIR = "bg"
-
 for d in [MUSIC_DIR, BG_DIR]:
-    if not os.path.exists(d): 
-        os.makedirs(d)
+    if not os.path.exists(d): os.makedirs(d)
 
 tracks = sorted([f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")])
 bg_gifs = [f for f in os.listdir(BG_DIR) if f.endswith(".gif")]
 
+# Инициализация состояний
 if 'page' not in st.session_state: st.session_state.page = "main"
 if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 
+# Твоя новая PNG ссылка (с обходом кэша)
 ICON_URL = "https://githubusercontent.com"
 
-# Логика фона
+# Логика GIF-фона
 bg_style = ""
 if st.session_state.playing and bg_gifs:
     if st.session_state.current_bg is None:
@@ -41,12 +41,9 @@ else:
     st.session_state.current_bg = None
     bg_style = "background-color: #000000;"
 
-# Чистый CSS без видимого текста
+# Ультра-дизайн и скрытые мета-теги
 st.markdown(f"""
     <style>
-    /* Мета-настройки для мобильных через CSS хак */
-    @choice {{ content: "{ICON_URL}"; }}
-    
     html, body, [class*="st-"] {{
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
     }}
@@ -56,7 +53,7 @@ st.markdown(f"""
     }}
     .stApp::before {{
         content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.7); z-index: -1;
+        background: rgba(0, 0, 0, 0.75); z-index: -1;
     }}
     audio {{ display: none !important; }}
     
@@ -67,42 +64,38 @@ st.markdown(f"""
     }}
     
     .track-title {{ 
-        font-size: clamp(28px, 8vw, 48px);
-        font-weight: 700; letter-spacing:-1px; text-align: center;
-        margin-top: 20px;
+        font-size: clamp(28px, 8vw, 48px); font-weight: 700; 
+        letter-spacing:-1.5px; text-align: center; margin-top: 20px;
     }}
     .track-author {{ 
-        font-size: clamp(16px, 4vw, 20px); 
-        color:#A020F0; margin-bottom: 40px; opacity:0.8; text-align: center;
+        font-size: clamp(16px, 4vw, 20px); color:#A020F0; 
+        margin-bottom: 50px; opacity:0.8; text-align: center;
     }}
 
     div.stButton > button {{
         background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(15px) !important;
+        backdrop-filter: blur(20px) !important;
         border: 1px solid rgba(160, 32, 240, 0.2) !important;
         border-radius: 50% !important;
         color: white !important;
         width: 65px !important; height: 65px !important;
         display: flex; align-items: center; justify-content: center;
-        transition: all 0.3s ease !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         margin: auto;
     }}
     
-    @media (hover: hover) {{
-        div.stButton > button:hover {{
-            transform: translateY(-5px) scale(1.1) !important;
-            border-color: #A020F0 !important;
-        }}
-    }}
+    div.stButton > button:active {{ transform: scale(0.9); }}
+    
     header {{visibility: hidden;}}
     </style>
     
-    <!-- Скрытые мета-теги -->
     <link rel="apple-touch-icon" href="{ICON_URL}">
-    <link rel="icon" href="{ICON_URL}">
+    <link rel="icon" type="image/png" href="{ICON_URL}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     """, unsafe_allow_html=True)
 
-# Интерфейс
+# Кнопка Библиотеки
 nav_c, _ = st.columns([0.2, 0.8])
 with nav_c:
     if st.button("←" if st.session_state.page == "library" else "☰"):
@@ -113,21 +106,26 @@ if not tracks:
     st.info("Добавь музыку в music/")
 else:
     current_file = tracks[st.session_state.track_index]
+
     if st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
-        for fav in list(st.session_state.favorites):
-            col_t, col_b = st.columns([0.75, 0.25])
-            with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
-            with col_b:
-                if st.button("▶", key=f"fav_play_{fav}"):
-                    st.session_state.track_index = tracks.index(fav)
-                    st.session_state.page = "main"
-                    st.session_state.playing = True
-                    st.rerun()
+        if not st.session_state.favorites:
+            st.write("<p style='text-align:center; opacity:0.5;'>Тут пусто</p>", unsafe_allow_html=True)
+        else:
+            for fav in list(st.session_state.favorites):
+                col_t, col_b = st.columns([0.75, 0.25])
+                with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
+                with col_b:
+                    if st.button("▶", key=f"fav_play_{fav}"):
+                        st.session_state.track_index = tracks.index(fav)
+                        st.session_state.page = "main"
+                        st.session_state.playing = True
+                        st.rerun()
     else:
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
+        
         st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
         
