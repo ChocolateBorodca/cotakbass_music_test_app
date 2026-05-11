@@ -1,123 +1,73 @@
 import streamlit as st
 import os
-import random
-import base64
-from PIL import Image
+import json
 
-# Настройка страницы
-st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
+# Настройка стиля Apple + SoundCloud
+st.set_page_config(page_title="cotakbass", layout="wide", initial_sidebar_state="collapsed")
 
-# Инициализация сессии
-if 'auth' not in st.session_state: st.session_state.auth = False
-if 'user' not in st.session_state: st.session_state.user = {"name": "guest", "avatar": None}
-if 'page' not in st.session_state: st.session_state.page = "main"
-
-# Папки
-for d in ["music", "avatars", "bg"]:
+# Создание папок
+for d in ["music", "avatars", "bg_profiles"]:
     if not os.path.exists(d): os.makedirs(d)
 
-# CSS: Твой стиль + новые элементы
+# CSS для индикатора сети и стеклянного профиля
 st.markdown(f"""
     <style>
-    header, footer, #MainMenu {{ visibility: hidden !important; }}
-    .stApp {{ background-color: #000000; color: #FFFFFF; font-family: -apple-system, sans-serif; }}
-    
-    /* Стеклянный блок входа */
-    .glass-auth {{
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(50px);
-        border: 1px solid rgba(160, 32, 240, 0.2);
-        border-radius: 40px;
-        padding: 50px 20px;
-        text-align: center;
-    }}
-
-    /* Аватарка в профиле */
-    .profile-circle {{
-        width: 120px; height: 120px;
+    /* Индикатор сети вокруг авы */
+    .online-indicator {{
+        border: 3px solid #A020F0 !important; /* Фиолетовый - в сети */
+        padding: 5px;
         border-radius: 50%;
-        border: 3px solid #A020F0;
-        object-fit: cover;
-        margin-bottom: 20px;
+        display: inline-block;
+    }}
+    .offline-indicator {{
+        border: 3px solid #333 !important; /* Черный - оффлайн */
+        padding: 5px;
+        border-radius: 50%;
+        display: inline-block;
     }}
     
-    /* Кнопки как раньше */
-    div.stButton > button {{
-        background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(160, 32, 240, 0.2) !important;
-        border-radius: 50px !important;
-        color: white !important;
-        transition: 0.3s ease;
-    }}
+    /* Скрытие мусора */
+    header, footer, #MainMenu {{ visibility: hidden !important; }}
+    .stApp {{ background-color: #000000; color: white; }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 1. ЭКРАН ВХОДА ---
-def show_auth():
-    st.markdown('<div style="text-align:center; color:#A020F0; font-size:28px; letter-spacing:8px; margin: 40px 0;">cotakbass music</div>', unsafe_allow_html=True)
-    
-    _, col, _ = st.columns([0.1, 0.8, 0.1])
-    with col:
-        st.markdown('<div class="glass-auth">', unsafe_allow_html=True)
-        st.subheader("регистрация")
-        
-        name = st.text_input("твой ник", placeholder="как тебя зовут?")
-        bio = st.text_area("о себе", placeholder="пару слов...")
-        ava = st.file_uploader("загрузи аватарку", type=['png', 'jpg'])
-        
-        if st.button("войти в систему"):
-            if name:
-                st.session_state.user['name'] = name
-                if ava:
-                    with open(f"avatars/{name}.png", "wb") as f:
-                        f.write(ava.getbuffer())
-                    st.session_state.user['avatar'] = f"avatars/{name}.png"
-                st.session_state.auth = True
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+# Логика регистрации/входа
+if 'auth' not in st.session_state: st.session_state.auth = False
 
-# --- 2. ЭКРАН ПРОФИЛЯ (SOUNDCLOUD STYLE) ---
-def show_profile():
-    st.markdown('<div style="text-align:center; color:#A020F0; font-size:10px; letter-spacing:5px;">profile</div>', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([0.2, 0.6, 0.2])
-    with col2:
-        if st.session_state.user['avatar']:
-            st.image(st.session_state.user['avatar'], width=150)
-        st.title(st.session_state.user['name'])
-        st.write("---")
-        
-        st.subheader("опубликовать трек")
-        new_track = st.file_uploader("выбери .mp3", type="mp3")
-        track_name = st.text_input("название трека")
-        
-        if st.button("опубликовать") and new_track and track_name:
-            with open(f"music/{st.session_state.user['name']} - {track_name}.mp3", "wb") as f:
-                f.write(new_track.getbuffer())
-            st.success("трек загружен!")
-
-# --- ЗАПУСК ПРИЛОЖЕНИЯ ---
 if not st.session_state.auth:
-    show_auth()
+    # Экран входа (твой минимализм)
+    st.markdown("<h1 style='text-align:center; color:#A020F0;'>cotakbass music</h1>", unsafe_allow_html=True)
+    with st.container():
+        name = st.text_input("Никнейм")
+        ava = st.file_uploader("Загрузи аватарку", type=['png', 'jpg'])
+        if st.button("Войти"):
+            if name:
+                st.session_state.auth = True
+                st.session_state.user = name
+                st.rerun()
 else:
-    # Навигация: Ава | Пусто | Поиск
-    n1, n2, n3 = st.columns([0.2, 0.6, 0.2])
-    with n1:
-        # Индикатор сети вокруг авы (упрощенно кнопкой)
-        if st.button("👤"): 
-            st.session_state.page = "profile" if st.session_state.page != "profile" else "main"
-            st.rerun()
-    with n3:
-        if st.button("?"): 
+    # Главный экран
+    col_ava, col_space, col_search = st.columns([0.1, 0.8, 0.1])
+    
+    with col_ava:
+        # Аватарка с фиолетовой линией (если в сети)
+        st.markdown('<div class="online-indicator">👤</div>', unsafe_allow_html=True)
+        if st.button("Профиль"):
+            st.session_state.page = "profile"
+    
+    with col_search:
+        if st.button("🔍"):
             st.session_state.page = "search"
-            st.rerun()
 
-    if st.session_state.page == "profile":
-        show_profile()
-    elif st.session_state.page == "main":
-        st.markdown('<div style="text-align:center; margin-top:20vh;">', unsafe_allow_html=True)
-        st.markdown(f"<h2>привет, {st.session_state.user['name']}</h2>", unsafe_allow_html=True)
-        st.write("твой плеер готов к работе")
-        st.markdown('</div>', unsafe_allow_html=True)
-        # Сюда вставляется код плеера
+    # Страница публикации (как в SoundCloud)
+    if st.session_state.get('page') == "profile":
+        st.subheader("Мой Профиль")
+        uploaded_track = st.file_uploader("Опубликовать свой трек", type="mp3")
+        track_title = st.text_input("Название трека")
+        
+        if st.button("Опубликовать") and uploaded_track:
+            # Сохраняем файл в папку music
+            with open(os.path.join("music", f"{st.session_state.user}_{track_title}.mp3"), "wb") as f:
+                f.write(uploaded_track.getbuffer())
+            st.success("Трек опубликован и доступен в поиске!")
