@@ -39,7 +39,7 @@ if st.session_state.playing and bg_gifs:
 if st.session_state.page == "registration":
     registration_screen()
 else:
-    # ТВОЙ ПЛЕЕР + БЕГУЩАЯ СТРОКА + ПОИСК С ВОПРОСОМ
+    # ТВОЙ ПЛЕЕР + НАЗВАНИЕ СЛЕВА + ПОИСК С ВОПРОСОМ
     st.markdown(f"""
         <style>
         header, footer, #MainMenu, [data-testid="stInputInstructions"], .st-emotion-cache-1pxm666 {{ display: none !important; }}
@@ -50,25 +50,24 @@ else:
         /* Стеклянные кнопки навигации */
         div.stButton > button {{ background: rgba(255, 255, 255, 0.02) !important; backdrop-filter: blur(30px) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 50% !important; color: #A020F0 !important; width: 52px !important; height: 52px !important; transition: 0.3s ease; }}
 
-        /* АНИМАЦИЯ БЕГУЩЕЙ СТРОКИ */
-        .marquee {{
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            margin: 0 auto;
+        /* СТИЛЬ НАЗВАНИЯ СЛЕВА */
+        .track-display {{
+            text-align: left;
+            padding-left: 5%;
+            margin-top: 10vh;
         }}
-        .marquee span {{
-            display: inline-block;
-            padding-left: 100%;
-            animation: marquee 15s linear infinite;
+        .track-title-left {{
             font-size: 42px;
             font-weight: 700;
             color: white;
             letter-spacing: -1.5px;
+            margin-bottom: 5px;
         }}
-        @keyframes marquee {{
-            0%   {{ transform: translate(0, 0); }}
-            100% {{ transform: translate(-100%, 0); }}
+        .track-author-left {{
+            font-size: 18px;
+            color: #A020F0;
+            font-weight: 300;
+            margin-bottom: 60px;
         }}
 
         /* ПОИСКОВАЯ ПОЛОСА С "?" ВНУТРИ */
@@ -97,7 +96,7 @@ else:
         </style>
     """, unsafe_allow_html=True)
 
-    # Навигация
+    # Навигация (☰ | Плеер | 👤 ?)
     n1, _, n2, n3 = st.columns([0.15, 0.6, 0.12, 0.13])
     with n1:
         if st.button("☰"):
@@ -125,20 +124,21 @@ else:
                     if st.button("▶", key=f"f_{fav}"):
                         st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(fav), "main", True; st.rerun()
         else:
-            # Главный экран с БЕГУЩЕЙ СТРОКОЙ
+            # Главный экран
             st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
             curr = tracks[st.session_state.track_index]
             name_c = curr.replace(".mp3", "").replace("_", " ")
             auth, title = name_c.split(", ", 1) if ", " in name_c else ("unknown", name_c)
             
-            # Анимация названия
+            # ТЕКСТ СЛЕВА
             st.markdown(f"""
-                <div style="text-align:center; margin-top:10vh;">
-                    <div class="marquee"><span>{title}</span></div>
-                    <div style="color:#A020F0; font-size:18px; margin-bottom:50px; font-weight:300;">{auth}</div>
+                <div class="track-display">
+                    <div class="track-title-left">{title}</div>
+                    <div class="track-author-left">{auth}</div>
                 </div>
             """, unsafe_allow_html=True)
             
+            # Кнопки (остаются по центру для удобства управления)
             _, b1, b2, b3, b4, _ = st.columns(6)
             with b1:
                 if st.button("❮"): st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks); st.session_state.current_bg = None; st.rerun()
