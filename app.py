@@ -5,7 +5,7 @@ import base64
 
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
-# Настройки папок
+# Папки
 MUSIC_DIR = "music"
 BG_DIR = "bg"
 for d in [MUSIC_DIR, BG_DIR]:
@@ -20,9 +20,6 @@ if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
-if 'search_val' not in st.session_state: st.session_state.search_val = ""
-
-ICON_URL = "https://githubusercontent.com"
 
 # Логика фона
 bg_html = ""
@@ -39,11 +36,23 @@ else:
     st.session_state.current_bg = None
     bg_html = "background-color: #000000;"
 
-# УЛЬТРА-МАТОВЫЙ CSS (Собственные компоненты)
+# УЛЬТРА-МИНМАЛИЗМ И ФИКС ПОИСКА
 st.markdown(f"""
     <style>
-    /* Полная зачистка */
-    header, footer, .stDeployButton, #MainMenu, [data-testid="stInputInstructions"] {{
+    /* 1. ЖЕСТКОЕ УДАЛЕНИЕ "Press Enter to apply" */
+    [data-testid="stInputInstructions"] {{
+        display: none !important;
+    }}
+    .st-emotion-cache-1pxm666 {{
+        display: none !important;
+    }}
+    
+    /* Скрываем стандартную надпись внутри инпута */
+    input::placeholder {{
+        color: rgba(255, 255, 255, 0.3) !important;
+    }}
+
+    header, footer, .stDeployButton, #MainMenu {{
         display: none !important;
     }}
     
@@ -53,47 +62,51 @@ st.markdown(f"""
     .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: -1; }}
     audio {{ display: none !important; }}
     
-    /* Стеклянные кнопки навигации */
+    /* Стеклянные кнопки навигации (Верхние) */
     div.stButton > button {{
-        background: rgba(255, 255, 255, 0.02) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
         backdrop-filter: blur(40px) !important;
         -webkit-backdrop-filter: blur(40px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 50% !important;
         color: white !important;
-        width: 50px !important; height: 50px !important;
+        width: 55px !important; height: 55px !important;
         display: flex !important; align-items: center !important; justify-content: center !important;
         transition: 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }}
 
-    /* Кастомная матовая полоса поиска */
-    .custom-search-box {{
+    /* ПОЛОСА ПОИСКА - МАТОВОЕ СТЕКЛО */
+    div[data-testid="stTextInput"] div[data-baseweb="input"] {{
         background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(60px) brightness(0.7) !important;
-        -webkit-backdrop-filter: blur(60px) brightness(0.7) !important;
+        backdrop-filter: blur(50px) brightness(0.6) !important;
+        -webkit-backdrop-filter: blur(50px) brightness(0.6) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 20px;
-        padding: 15px 25px;
-        color: white;
-        width: 100%;
-        font-size: 18px;
-        margin-bottom: 30px;
-        outline: none;
+        border-radius: 20px !important;
+        padding: 5px !important;
+    }}
+    
+    div[data-testid="stTextInput"] input {{
+        color: white !important;
+        font-size: 18px !important;
+        background: transparent !important;
     }}
 
+    /* Список треков */
     .track-info {{ font-size: 16px; font-weight: 300; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.02); color: white; }}
-    .app-header {{ font-size: 9px; letter-spacing: 6px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 50px; opacity: 0.4; }}
+    .app-header {{ font-size: 9px; letter-spacing: 6px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 50px; opacity: 0.5; }}
     </style>
     """, unsafe_allow_html=True)
 
-# Навигация
+# Навигация: Кнопки разнесены по краям
 n1, _, n2 = st.columns([0.15, 0.7, 0.15])
 with n1:
     if st.button("←" if st.session_state.page != "main" else "☰"):
         st.session_state.page = "main" if st.session_state.page != "main" else "library"
         st.rerun()
 with n2:
-    if st.button("  "): # Минималистичный символ поиска
+    # Иконка поиска теперь ВИДНА
+    if st.button("🔍"): 
         st.session_state.page = "search"
         st.rerun()
 
@@ -103,7 +116,7 @@ else:
     if st.session_state.page == "search":
         st.markdown('<div class="app-header">search</div>', unsafe_allow_html=True)
         
-        # Используем стандартный Streamlit ввод, но с "хакнутым" CSS, который теперь ОЧЕНЬ строгий
+        # Инпут теперь чистый
         query = st.text_input("", placeholder="напиши хуйню", key="search_input", label_visibility="collapsed")
         
         if query:
@@ -136,17 +149,18 @@ else:
                         st.rerun()
 
     else:
-        # Главный экран
+        # ГЛАВНЫЙ ЭКРАН
         current_file = tracks[st.session_state.track_index]
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
         
         st.markdown(f'<div style="text-align:center; margin-top:10vh;">', unsafe_allow_html=True)
-        st.markdown(f'<div style="font-size:44px; font-weight:800; margin-bottom:5px; letter-spacing:-1.5px; line-height:1; color: white;">{title}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:44px; font-weight:800; margin-bottom:5px; letter-spacing:-1.5px; color: white;">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div style="font-size:18px; color:#A020F0; margin-bottom:75px; font-weight:300; opacity:0.8;">{author}</div>', unsafe_allow_html=True)
         
-        c1, c2, c3, c4 = st.columns(4)
+        # Кнопки управления
+        _, c1, c2, c3, c4, _ = st.columns(6)
         with c1:
             if st.button("❮"):
                 st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks)
