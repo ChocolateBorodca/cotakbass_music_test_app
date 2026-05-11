@@ -1,120 +1,97 @@
 import streamlit as st
 import os
 
-st.set_page_config(page_title="Neon Glass Player", layout="wide")
+st.set_page_config(page_title="Neon Black Player", layout="wide")
 
-# Кастомный CSS: Черный + Фиолетовый Неон
+# Ультра-черный дизайн
 st.markdown("""
     <style>
-    /* Глубокий черный фон с виньеткой */
     .stApp {
-        background: radial-gradient(circle, #1a0b2e 0%, #000000 100%);
+        background-color: #000000;
         color: #FFFFFF;
     }
-
-    /* Шрифты Apple */
-    html, body, [class*="st-"] {
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
+    
+    /* Чистая библиотека без наложений */
+    .lib-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 500px;
+        margin: 0 auto;
     }
 
-    /* Стеклянная карточка с неоновой обводкой */
+    /* Стеклянная карточка */
     .glass-card {
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(40px);
-        -webkit-backdrop-filter: blur(40px);
-        border: 1px solid rgba(160, 32, 240, 0.3); /* Фиолетовый неон */
-        border-radius: 50px;
-        padding: 60px 40px;
-        box-shadow: 0 0 30px rgba(160, 32, 240, 0.1);
-        margin: auto;
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid rgba(160, 32, 240, 0.2);
+        border-radius: 40px;
+        padding: 50px 30px;
+        margin: 50px auto;
         max-width: 550px;
         text-align: center;
     }
 
-    /* Центрирование кнопок в одну линию */
-    [data-testid="stHorizontalBlock"] {
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Неоновые кнопки-капли */
+    /* Кнопки управления */
     div.stButton > button {
-        background: rgba(160, 32, 240, 0.05) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(160, 32, 240, 0.4) !important;
-        border-radius: 100px !important;
-        color: #e0aaff !important;
-        font-size: 20px !important;
-        height: 65px !important;
+        background: #000000 !important;
+        border: 1px solid rgba(160, 32, 240, 0.3) !important;
+        border-radius: 50% !important;
+        color: #FFFFFF !important;
         width: 65px !important;
-        transition: all 0.4s ease;
-        box-shadow: 0 0 10px rgba(160, 32, 240, 0.2);
+        height: 65px !important;
+        font-size: 20px !important;
+        transition: 0.3s;
     }
-    
     div.stButton > button:hover {
-        background: rgba(160, 32, 240, 0.2) !important;
-        border: 1px solid rgba(160, 32, 240, 0.8) !important;
-        box-shadow: 0 0 25px rgba(160, 32, 240, 0.5);
-        transform: scale(1.1);
+        border-color: #A020F0 !important;
+        box-shadow: 0 0 15px rgba(160, 32, 240, 0.4);
     }
 
-    /* Текст */
-    .track-title { 
-        font-size: 40px; 
-        font-weight: 700; 
-        letter-spacing: -1.5px;
-        color: #ffffff;
-        text-shadow: 0 0 20px rgba(160, 32, 240, 0.4);
-        margin-bottom: 5px;
-    }
-    .track-author { 
-        font-size: 20px; 
-        color: #a020f0; 
-        opacity: 0.8;
-        font-weight: 400; 
-        margin-bottom: 50px; 
-    }
+    /* Тексты */
+    .track-title { font-size: 36px; font-weight: 700; margin-bottom: 0px; letter-spacing: -1px; }
+    .track-author { font-size: 18px; color: #A020F0; opacity: 0.7; margin-bottom: 40px; }
     
-    /* Скрываем лишнее */
     header {visibility: hidden;}
-    [data-testid="stSidebar"] {display: none;}
     </style>
     """, unsafe_allow_html=True)
 
-# Логика работы с треками
+# Инициализация
 MUSIC_DIR = "music"
 if not os.path.exists(MUSIC_DIR): os.makedirs(MUSIC_DIR)
 tracks = sorted([f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")])
 
 if 'page' not in st.session_state: st.session_state.page = "main"
 if 'track_index' not in st.session_state: st.session_state.track_index = 0
-if 'favorites' not in st.session_state: st.session_state.favorites = []
+if 'favorites' not in st.session_state: st.session_state.favorites = set() # Используем set для уникальности
+if 'playing' not in st.session_state: st.session_state.playing = False
 
-# Кнопка Библиотеки (Слева сверху)
-c_nav, _ = st.columns([1, 5])
+# Навигация (Кнопка меню)
+c_nav, _ = st.columns([0.1, 0.9])
 with c_nav:
-    label = "←" if st.session_state.page == "library" else "☰"
-    if st.button(label):
-        st.session_state.page = "main" if st.session_state.page == "library" else "library"
+    if st.button("☰" if st.session_state.page == "main" else "←"):
+        st.session_state.page = "library" if st.session_state.page == "main" else "main"
         st.rerun()
 
 if not tracks:
-    st.info("Добавь музыку в /music")
+    st.info("Добавь музыку в папку music/")
 else:
     current_file = tracks[st.session_state.track_index]
 
     if st.session_state.page == "library":
-        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-        st.markdown('<div class="track-title" style="font-size: 28px">Избранное</div>', unsafe_allow_html=True)
-        for fav in st.session_state.favorites:
-            if st.button(f"🟣 {fav.replace('.mp3', '')}"):
-                st.session_state.track_index = tracks.index(fav)
-                st.session_state.page = "main"
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<h1 style="text-align:center;">Избранное</h1>', unsafe_allow_html=True)
+        if not st.session_state.favorites:
+            st.write("<p style='text-align:center;'>Тут пока пусто</p>", unsafe_allow_html=True)
+        else:
+            for fav in list(st.session_state.favorites):
+                # Каждая кнопка трека в библиотеке теперь на всю ширину и аккуратная
+                if st.button(f"🎵 {fav.replace('.mp3', '')}", key=fav, use_container_width=True):
+                    st.session_state.track_index = tracks.index(fav)
+                    st.session_state.page = "main"
+                    st.session_state.playing = True
+                    st.rerun()
 
     else:
-        # Плеер
+        # Основной интерфейс плеера
         display_name = current_file.replace(".mp3", "")
         author, title = display_name.split(" - ", 1) if " - " in display_name else ("Unknown", display_name)
         
@@ -122,27 +99,32 @@ else:
         st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
         
-        # Ряд кнопок: Назад - Плей - Вперед - Лайк
-        c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1])
+        # Кнопки в один ряд: Назад - Вкл/Выкл - Вперед - Лайк
+        c1, c2, c3, c4, c5, c6 = st.columns([1,1,1,1,1,1])
         with c2:
             if st.button("❮"):
                 st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks)
                 st.rerun()
         with c3:
-            st.button("▶") # Центральная кнопка
+            play_icon = "Ⅱ" if st.session_state.playing else "▶"
+            if st.button(play_icon):
+                st.session_state.playing = not st.session_state.playing
+                st.rerun()
         with c4:
             if st.button("❯"):
                 st.session_state.track_index = (st.session_state.track_index + 1) % len(tracks)
                 st.rerun()
         with c5:
-            # Цвет кнопки меняется, если трек в любимых
-            heart = "💜" if current_file in st.session_state.favorites else "🤍"
-            if st.button(heart):
-                if current_file not in st.session_state.favorites:
-                    st.session_state.favorites.append(current_file)
-                    st.toast("В метедиатеке")
+            is_fav = current_file in st.session_state.favorites
+            if st.button("💜" if is_fav else "🤍"):
+                if is_fav: st.session_state.favorites.remove(current_file)
+                else: st.session_state.favorites.add(current_file)
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Аудиомодуль
-    st.write("")
-    st.audio(os.path.join(MUSIC_DIR, current_file))
+    # Логика самого плеера
+    audio_path = os.path.join(MUSIC_DIR, current_file)
+    if st.session_state.playing:
+        st.audio(audio_path, autoplay=True)
+    else:
+        st.audio(audio_path, autoplay=False)
