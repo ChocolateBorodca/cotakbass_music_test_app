@@ -3,7 +3,7 @@ import os
 import random
 import base64
 
-# Установка названия вкладки и иконки (для браузера)
+# Установка конфигурации
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
 # Настройки папок
@@ -23,10 +23,9 @@ if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 
-# ТВОЯ ПРЯМАЯ ССЫЛКА НА ИКОНКУ
-ICON_URL = "https://raw.githubusercontent.com/ChocolateBorodca/cotakbass_music_test_app/refs/heads/main/IMG_20260511_154825.jpg"
+ICON_URL = "https://githubusercontent.com"
 
-# Логика выбора случайного GIF-фона
+# Логика фона
 bg_style = ""
 if st.session_state.playing and bg_gifs:
     if st.session_state.current_bg is None:
@@ -42,18 +41,12 @@ else:
     st.session_state.current_bg = None
     bg_style = "background-color: #000000;"
 
-# Мета-теги для PWA и Стили
+# Чистый CSS без видимого текста
 st.markdown(f"""
-    <html>
-        <head>
-            <meta name="apple-mobile-web-app-capable" content="yes">
-            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-            <meta name="apple-mobile-web-app-title" content="cotakbass">
-            <link rel="apple-touch-icon" href="{ICON_URL}">
-            <link rel="icon" href="{ICON_URL}">
-        </head>
-    </html>
     <style>
+    /* Мета-настройки для мобильных через CSS хак */
+    @choice {{ content: "{ICON_URL}"; }}
+    
     html, body, [class*="st-"] {{
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
     }}
@@ -101,12 +94,15 @@ st.markdown(f"""
             border-color: #A020F0 !important;
         }}
     }}
-
     header {{visibility: hidden;}}
     </style>
+    
+    <!-- Скрытые мета-теги -->
+    <link rel="apple-touch-icon" href="{ICON_URL}">
+    <link rel="icon" href="{ICON_URL}">
     """, unsafe_allow_html=True)
 
-# Кнопка меню (Библиотека)
+# Интерфейс
 nav_c, _ = st.columns([0.2, 0.8])
 with nav_c:
     if st.button("←" if st.session_state.page == "library" else "☰"):
@@ -117,31 +113,24 @@ if not tracks:
     st.info("Добавь музыку в music/")
 else:
     current_file = tracks[st.session_state.track_index]
-
     if st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
-        if not st.session_state.favorites:
-            st.write("<p style='text-align:center; opacity:0.5;'>Пусто</p>", unsafe_allow_html=True)
-        else:
-            for fav in list(st.session_state.favorites):
-                col_t, col_b = st.columns([0.75, 0.25])
-                with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
-                with col_b:
-                    if st.button("▶", key=f"fav_play_{fav}"):
-                        st.session_state.track_index = tracks.index(fav)
-                        st.session_state.page = "main"
-                        st.session_state.playing = True
-                        st.rerun()
+        for fav in list(st.session_state.favorites):
+            col_t, col_b = st.columns([0.75, 0.25])
+            with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
+            with col_b:
+                if st.button("▶", key=f"fav_play_{fav}"):
+                    st.session_state.track_index = tracks.index(fav)
+                    st.session_state.page = "main"
+                    st.session_state.playing = True
+                    st.rerun()
     else:
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
-        
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
-        
         st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
         
-        # Кнопки управления
         c1, c2, c3, c4 = st.columns(4)
         with c1:
             if st.button("❮"):
