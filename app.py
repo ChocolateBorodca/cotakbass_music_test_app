@@ -3,10 +3,9 @@ import os
 import random
 import base64
 
-# Конфигурация приложения
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
-# Папки
+# Настройки папок
 MUSIC_DIR = "music"
 BG_DIR = "bg"
 for d in [MUSIC_DIR, BG_DIR]:
@@ -15,14 +14,13 @@ for d in [MUSIC_DIR, BG_DIR]:
 tracks = sorted([f for f in os.listdir(MUSIC_DIR) if f.endswith(".mp3")])
 bg_gifs = [f for f in os.listdir(BG_DIR) if f.endswith(".gif")]
 
-# Инициализация состояний
 if 'page' not in st.session_state: st.session_state.page = "main"
 if 'track_index' not in st.session_state: st.session_state.track_index = 0
 if 'favorites' not in st.session_state: st.session_state.favorites = set()
 if 'playing' not in st.session_state: st.session_state.playing = False
 if 'current_bg' not in st.session_state: st.session_state.current_bg = None
 
-# Твоя новая PNG ссылка (с обходом кэша)
+# Твоя новая PNG ссылка
 ICON_URL = "https://raw.githubusercontent.com/ChocolateBorodca/cotakbass_music_test_app/refs/heads/main/logo.png"
 
 # Логика GIF-фона
@@ -41,8 +39,22 @@ else:
     st.session_state.current_bg = None
     bg_style = "background-color: #000000;"
 
-# Ультра-дизайн и скрытые мета-теги
+# УЛЬТРА-ФИКС ИКОНКИ (через JavaScript + CSS)
 st.markdown(f"""
+    <script>
+        // Принудительно меняем иконки через JS после загрузки
+        var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/png';
+        link.rel = 'shortcut icon';
+        link.href = '{ICON_URL}';
+        document.getElementsByTagName('head')[0].appendChild(link);
+        
+        var appleLink = document.createElement('link');
+        appleLink.rel = 'apple-touch-icon';
+        appleLink.href = '{ICON_URL}';
+        document.getElementsByTagName('head')[0].appendChild(appleLink);
+    </script>
+    
     <style>
     html, body, [class*="st-"] {{
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
@@ -86,16 +98,20 @@ st.markdown(f"""
     
     div.stButton > button:active {{ transform: scale(0.9); }}
     
+    /* Убираем лишние элементы Streamlit */
     header {{visibility: hidden;}}
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
     </style>
     
+    <!-- Мета-теги для закрепления -->
     <link rel="apple-touch-icon" href="{ICON_URL}">
     <link rel="icon" type="image/png" href="{ICON_URL}">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     """, unsafe_allow_html=True)
 
-# Кнопка Библиотеки
+# Рендеринг интерфейса (оставляем без изменений)
 nav_c, _ = st.columns([0.2, 0.8])
 with nav_c:
     if st.button("←" if st.session_state.page == "library" else "☰"):
@@ -106,26 +122,21 @@ if not tracks:
     st.info("Добавь музыку в music/")
 else:
     current_file = tracks[st.session_state.track_index]
-
     if st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
-        if not st.session_state.favorites:
-            st.write("<p style='text-align:center; opacity:0.5;'>Тут пусто</p>", unsafe_allow_html=True)
-        else:
-            for fav in list(st.session_state.favorites):
-                col_t, col_b = st.columns([0.75, 0.25])
-                with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
-                with col_b:
-                    if st.button("▶", key=f"fav_play_{fav}"):
-                        st.session_state.track_index = tracks.index(fav)
-                        st.session_state.page = "main"
-                        st.session_state.playing = True
-                        st.rerun()
+        for fav in list(st.session_state.favorites):
+            col_t, col_b = st.columns([0.75, 0.25])
+            with col_t: st.markdown(f"<div style='padding-top:15px; font-size:16px;'>{fav.replace('.mp3', '').replace('_', ' ')}</div>", unsafe_allow_html=True)
+            with col_b:
+                if st.button("▶", key=f"fav_play_{fav}"):
+                    st.session_state.track_index = tracks.index(fav)
+                    st.session_state.page = "main"
+                    st.session_state.playing = True
+                    st.rerun()
     else:
         st.markdown('<div class="app-header">cotakbass music</div>', unsafe_allow_html=True)
         name_clean = current_file.replace(".mp3", "").replace("_", " ")
         author, title = name_clean.split(", ", 1) if ", " in name_clean else ("unknown", name_clean)
-        
         st.markdown(f'<div class="track-title">{title}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="track-author">{author}</div>', unsafe_allow_html=True)
         
