@@ -5,7 +5,7 @@ import base64
 
 st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
 
-# Папки
+# Настройки папок
 MUSIC_DIR = "music"
 BG_DIR = "bg"
 for d in [MUSIC_DIR, BG_DIR]:
@@ -38,65 +38,75 @@ else:
     st.session_state.current_bg = None
     bg_html = "background-color: #000000;"
 
-# УЛЬТРА-СТЕКЛО CSS
+# МАГИЯ CSS: Матовое стекло и скрытие инструкций
 st.markdown(f"""
     <style>
     header, footer, .stDeployButton, #MainMenu {{visibility: hidden !important;}}
     html, body, [class*="st-"] {{ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important; }}
     
-    .stApp {{ {bg_html} transition: background 0.8s ease-in-out; }}
-    .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.82); z-index: -1; }}
+    .stApp {{ {bg_html} transition: background 0.8s ease; }}
+    .stApp::before {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: -1; }}
     audio {{ display: none !important; }}
     
-    /* Стеклянные кнопки (универсальный стиль) */
+    /* Стеклянные кнопки навигации */
     div.stButton > button {{
         background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(30px) !important;
         -webkit-backdrop-filter: blur(30px) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 50px !important;
+        border-radius: 50% !important;
         color: white !important;
+        width: 50px !important; height: 50px !important;
+        display: flex !important; align-items: center !important; justify-content: center !important;
         transition: 0.3s ease !important;
         margin: auto !important;
     }}
-    
-    /* Специальный круг для верхних кнопок */
-    .nav-btn div.stButton > button {{
-        border-radius: 50% !important;
-        width: 55px !important; height: 55px !important;
-    }}
 
-    /* УЛЬТРА-СТЕКЛЯННЫЙ ПОИСК */
+    /* УЛЬТРА-МАТОВЫЙ ПОИСК */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {{
-        background: rgba(255, 255, 255, 0.02) !important;
-        backdrop-filter: blur(40px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(50px) brightness(0.8) !important;
+        -webkit-backdrop-filter: blur(50px) brightness(0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 20px !important;
+        position: relative;
     }}
-    div[data-testid="stTextInput"] input {{ color: white !important; padding: 18px !important; }}
-    div[data-testid="stTextInput"] label {{ display: none !important; }}
-    /* Убираем подсказки Streamlit */
-    div[data-testid="stInputInstructions"] {{ display: none !important; }}
+    
+    /* Имитация лупы внутри поиска */
+    div[data-testid="stTextInput"] div[data-baseweb="input"]::after {{
+        content: "🔍";
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.5;
+        font-size: 18px;
+    }}
 
-    .track-info {{ font-size: 16px; font-weight: 300; padding-top: 15px; }}
+    div[data-testid="stTextInput"] input {{
+        color: white !important;
+        padding: 20px 50px 20px 20px !important;
+    }}
+    
+    /* Скрытие "Press Enter" */
+    div[data-testid="stInputInstructions"] {{ display: none !important; }}
+    div[data-testid="stTextInput"] label {{ display: none !important; }}
+
+    .track-info {{ font-size: 16px; font-weight: 300; padding-top: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }}
     .app-header {{ font-size: 10px; letter-spacing: 4px; text-transform: lowercase; color: #A020F0; text-align: center; margin-bottom: 40px; opacity: 0.6; }}
     </style>
     """, unsafe_allow_html=True)
 
-# Навигация (Идеальный баланс)
+# Навигация
 n1, _, n2 = st.columns([0.15, 0.7, 0.15])
 with n1:
-    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
     if st.button("←" if st.session_state.page != "main" else "☰"):
         st.session_state.page = "main" if st.session_state.page != "main" else "library"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 with n2:
-    st.markdown('<div class="nav-btn">', unsafe_allow_html=True)
-    if st.button("○"):
+    if st.button("🔍"):
         st.session_state.page = "search"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 if not tracks:
     st.info("No tracks")
@@ -104,16 +114,9 @@ else:
     # --- ЭКРАН ПОИСКА ---
     if st.session_state.page == "search":
         st.markdown('<div class="app-header">search</div>', unsafe_allow_html=True)
+        query = st.text_input("", placeholder="напиши хуйню", key="search_input")
         
-        # Поле поиска и кнопка в один ряд
-        cs1, cs2 = st.columns([0.8, 0.2])
-        with cs1:
-            query = st.text_input("", placeholder="напиши хуйню", key="search_input")
-        with cs2:
-            st.write("<div style='height:5px'></div>", unsafe_allow_html=True)
-            search_trigger = st.button("найти")
-
-        if query or search_trigger:
+        if query:
             filtered = [t for t in tracks if query.lower() in t.lower()]
             for track in filtered:
                 c_name, c_play = st.columns([0.85, 0.15])
@@ -129,16 +132,19 @@ else:
     # --- ЭКРАН БИБЛИОТЕКИ ---
     elif st.session_state.page == "library":
         st.markdown('<div class="app-header">favorites</div>', unsafe_allow_html=True)
-        for fav in list(st.session_state.favorites):
-            c_name, c_play = st.columns([0.85, 0.15])
-            with c_name:
-                st.markdown(f"<div class='track-info' style='border-bottom:1px solid #111;'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
-            with col_play: # Исправлено на c_play
-                if st.button("▶", key=f"f_{fav}"):
-                    st.session_state.track_index = tracks.index(fav)
-                    st.session_state.page = "main"
-                    st.session_state.playing = True
-                    st.rerun()
+        if not st.session_state.favorites:
+            st.write("<p style='text-align:center; opacity:0.5;'>Пусто</p>", unsafe_allow_html=True)
+        else:
+            for fav in list(st.session_state.favorites):
+                c_name, c_play = st.columns([0.85, 0.15])
+                with c_name:
+                    st.markdown(f"<div class='track-info'>{fav.replace('.mp3', '')}</div>", unsafe_allow_html=True)
+                with c_play:
+                    if st.button("▶", key=f"f_{fav}"):
+                        st.session_state.track_index = tracks.index(fav)
+                        st.session_state.page = "main"
+                        st.session_state.playing = True
+                        st.rerun()
 
     # --- ГЛАВНЫЙ ЭКРАН ---
     else:
