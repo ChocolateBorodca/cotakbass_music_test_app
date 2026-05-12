@@ -32,14 +32,17 @@ if st.session_state.playing and bg_gifs:
             encoded = base64.b64encode(f.read()).decode()
         bg_css = f'background-image: url("data:image/gif;base64,{encoded}"); background-size: cover; background-position: center;'
     except: pass
+else:
+    st.session_state.current_bg = None
 
-# --- 3. УЛЬТРА-МАТОВЫЙ CSS (ФИКС ДИЗАЙНА) ---
+# --- 3. УЛЬТРА-CSS (ФИКС ВСЕГО) ---
 st.markdown(f"""
     <style>
-    /* ПОЛНАЯ ЗАЧИСТКА ВСЕГО ЛИШНЕГО */
+    /* ПОЛНАЯ ЗАЧИСТКА МУСОРА И ТОЧЕК */
     header, footer, #MainMenu, [data-testid="stInputInstructions"], 
     .st-emotion-cache-oc994i, .st-emotion-cache-1pxm666, .st-emotion-cache-1vt4y65,
-    .st-emotion-cache-6q9sum, .st-emotion-cache-10trblm, .st-emotion-cache-10o49cf {{
+    .st-emotion-cache-6q9sum, .st-emotion-cache-10trblm, .st-emotion-cache-10o49cf,
+    [data-testid="stHeader"], .st-emotion-cache-k7vsyb {{
         display: none !important;
         visibility: hidden !important;
         height: 0 !important;
@@ -49,6 +52,14 @@ st.markdown(f"""
     .stApp {{ {bg_css} transition: background 0.8s ease; }}
     .stApp::before {{ content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: -1; }}
     audio {{ display: none !important; }}
+
+    /* КНОПКА ВЫЙТИ (СЛЕВА СВЕРХУ) */
+    .exit-btn-fixed {{
+        position: fixed;
+        top: 25px;
+        left: 25px;
+        z-index: 5000;
+    }}
 
     /* УНИВЕРСАЛЬНЫЕ КНОПКИ */
     div.stButton > button {{
@@ -61,56 +72,52 @@ st.markdown(f"""
         transition: 0.3s ease;
     }}
 
-    /* КНОПКА ВЫЙТИ (В УГЛУ) */
-    .exit-btn-corner {{
-        position: fixed;
-        top: 30px;
-        left: 30px;
-        z-index: 2000;
-    }}
-
-    /* ЦЕНТРАЛЬНЫЙ КОНТЕЙНЕР ДЛЯ КРУГА */
-    .center-wrapper {{
+    /* ГЛАВНЫЙ ФИКС ЦЕНТРАЛЬНОГО КРУГА */
+    .profile-page-container {{
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 70vh;
+        height: 80vh;
         width: 100%;
+        position: relative;
     }}
 
-    .profile-circle-wrap {{
+    .clickable-circle {{
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        border: 2px solid #A020F0;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 50px;
+        color: #A020F0;
+        backdrop-filter: blur(30px);
+        overflow: hidden;
+        cursor: pointer;
         position: relative;
-        width: 180px; height: 180px;
+        box-shadow: 0 0 30px rgba(160, 32, 240, 0.2);
     }}
-    
-    /* Невидимый загрузчик поверх круга */
+
+    /* Растягиваем загрузчик на весь круг */
     [data-testid="stFileUploader"] {{
-        position: absolute !important; inset: 0 !important;
-        width: 100% !important; height: 100% !important;
-        opacity: 0 !important; z-index: 1000 !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        opacity: 0 !important;
+        z-index: 1000 !important;
         cursor: pointer !important;
     }}
 
-    .circle-visual {{
-        width: 180px; height: 180px;
-        border-radius: 50%;
-        border: 2px solid #A020F0;
-        background: rgba(160, 32, 240, 0.05);
-        display: flex; justify-content: center; align-items: center;
-        font-size: 50px; color: #A020F0;
-        backdrop-filter: blur(20px);
-        overflow: hidden;
-        box-shadow: 0 0 30px rgba(160, 32, 240, 0.2);
-    }}
-    .circle-visual img {{ width: 100%; height: 100%; object-fit: cover; }}
-
-    /* ПЛЕЕР: ТЕКСТ СЛЕВА */
+    /* Текст слева в плеере */
     .track-info-left {{ text-align: left; padding-left: 5%; margin-top: 15vh; }}
     .title-text {{ font-size: clamp(32px, 8vw, 52px); font-weight: 800; color: white; letter-spacing: -2px; line-height: 1.1; }}
     .author-text {{ font-size: 18px; color: #A020F0; font-weight: 300; margin-top: 10px; margin-bottom: 60px; }}
 
-    /* ПОИСК */
+    /* Поиск */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {{ 
         background: rgba(255, 255, 255, 0.03) !important; 
         backdrop-filter: blur(60px) brightness(0.7) !important; 
@@ -129,29 +136,30 @@ st.markdown(f"""
 
 if st.session_state.page == "profile":
     # Кнопка ВЫЙТИ в левом верхнем углу
-    st.markdown('<div class="exit-btn-corner">', unsafe_allow_html=True)
-    if st.button("←", key="exit_profile"):
-        st.session_state.page = "main"; st.rerun()
+    st.markdown('<div class="exit-btn-fixed">', unsafe_allow_html=True)
+    if st.button("←", key="exit_profile_page"):
+        st.session_state.page = "main"
+        st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:5px; margin-top:50px;">PROFILE</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:5px; margin-top:30px;">PROFILE</div>', unsafe_allow_html=True)
     
-    # КРУГ В ЦЕНТРЕ
-    st.markdown('<div class="center-wrapper">', unsafe_allow_html=True)
-    st.markdown('<div class="profile-circle-wrap">', unsafe_allow_html=True)
+    # ЦЕНТРАЛЬНЫЙ КОНТЕЙНЕР
+    st.markdown('<div class="profile-page-container">', unsafe_allow_html=True)
     
-    # Визуал круга
+    # Визуальный круг
+    st.markdown('<div class="clickable-circle">', unsafe_allow_html=True)
     if st.session_state.user_ava:
-        st.markdown(f'<div class="circle-visual"><img src="data:image/png;base64,{st.session_state.user_ava}"></div>', unsafe_allow_html=True)
+        st.markdown(f'<img src="data:image/png;base64,{st.session_state.user_ava}" style="width:100%; height:100%; object-fit:cover;">', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="circle-visual">+</div>', unsafe_allow_html=True)
+        st.write("+")
     
-    # Скрытый загрузчик
-    up = st.file_uploader("", key="ava_up", label_visibility="collapsed")
+    # Невидимый загрузчик внутри круга
+    up = st.file_uploader("", key="ava_up_file", label_visibility="collapsed")
     if up:
         st.session_state.user_ava = get_base64(up)
         st.rerun()
-        
+    
     st.markdown('</div></div>', unsafe_allow_html=True)
 
 else:
@@ -174,16 +182,16 @@ else:
         if q and tracks:
             for t in [x for x in tracks if q.lower() in x.lower()]:
                 c_n, c_p = st.columns([0.85, 0.15])
-                with c_n: st.markdown(f"<div style='color:white; padding:15px 0; border-bottom:1px solid #111;'>{t.replace('.mp3','')}</div>", unsafe_allow_html=True)
+                with c_n: st.markdown(f"<div style='color:white; padding:18px 0; border-bottom:1px solid #111;'>{t.replace('.mp3','')}</div>", unsafe_allow_html=True)
                 with c_p:
                     if st.button("▶", key=f"s_{t}"):
                         st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(t), "main", True; st.rerun()
 
     elif st.session_state.page == "library":
-        st.markdown('<div class="app-header" style="text-align:center; opacity:0.5; margin-top:20px;">FAVORITES</div>', unsafe_allow_html=True)
+        st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:5px; margin-top:20px;">FAVORITES</div>', unsafe_allow_html=True)
         for f in list(st.session_state.favorites):
             c_n, c_p = st.columns([0.85, 0.15])
-            with c_n: st.markdown(f"<div style='color:white; padding:15px 0; border-bottom:1px solid #111;'>{f.replace('.mp3','')}</div>", unsafe_allow_html=True)
+            with c_n: st.markdown(f"<div style='color:white; padding:18px 0; border-bottom:1px solid #111;'>{f.replace('.mp3','')}</div>", unsafe_allow_html=True)
             with c_p:
                 if st.button("▶", key=f"l_{f}"):
                     st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(f), "main", True; st.rerun()
