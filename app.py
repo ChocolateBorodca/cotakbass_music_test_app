@@ -1,218 +1,105 @@
 import streamlit as st
 import os
-import random
 import base64
 
-# --- 1. НАСТРОЙКИ ---
-st.set_page_config(page_title="cotakbass music", layout="wide", initial_sidebar_state="collapsed")
-
-# Папки
-for d in ["music", "bg", "avatars"]:
-    if not os.path.exists(d): os.makedirs(d)
-
-# Session State
-if 'page' not in st.session_state: st.session_state.page = "main"
-if 'track_index' not in st.session_state: st.session_state.track_index = 0
-if 'favorites' not in st.session_state: st.session_state.favorites = set()
-if 'playing' not in st.session_state: st.session_state.playing = False
-if 'current_bg' not in st.session_state: st.session_state.current_bg = None
-if 'user_ava' not in st.session_state: st.session_state.user_ava = None
+# Настройки
+st.set_page_config(page_title="cotakbass", layout="wide", initial_sidebar_state="collapsed")
 
 def get_base64(file):
     return base64.b64encode(file.getvalue()).decode() if file else None
 
-# --- 2. ДИНАМИЧЕСКИЙ ФОН ---
-bg_css = "background-color: #000000;"
-bg_gifs = [f for f in os.listdir("bg") if f.endswith(".gif")]
-if st.session_state.playing and bg_gifs:
-    if st.session_state.current_bg is None:
-        st.session_state.current_bg = random.choice(bg_gifs)
-    try:
-        with open(os.path.join("bg", st.session_state.current_bg), "rb") as f:
-            encoded = base64.b64encode(f.read()).decode()
-        bg_css = f'background-image: url("data:image/gif;base64,{encoded}"); background-size: cover; background-position: center;'
-    except: pass
-else:
-    st.session_state.current_bg = None
+# Инициализация авы
+if 'user_ava' not in st.session_state: st.session_state.user_ava = None
+if 'page' not in st.session_state: st.session_state.page = "main"
 
-# --- 3. УЛЬТРА-CSS (ФИКС ВСЕГО) ---
+# УЛЬТРА-ФИКС: Только центр, только хардкор
 st.markdown(f"""
     <style>
-    /* ПОЛНАЯ ЗАЧИСТКА МУСОРА И ТОЧЕК */
+    /* Прячем всё лишнее от Streamlit */
     header, footer, #MainMenu, [data-testid="stInputInstructions"], 
-    .st-emotion-cache-oc994i, .st-emotion-cache-1pxm666, .st-emotion-cache-1vt4y65,
-    .st-emotion-cache-6q9sum, .st-emotion-cache-10trblm, .st-emotion-cache-10o49cf,
-    [data-testid="stHeader"], .st-emotion-cache-k7vsyb {{
+    .st-emotion-cache-oc994i, .st-emotion-cache-1vt4y65, .st-emotion-cache-k7vsyb,
+    [data-testid="stHeader"] {{
         display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
     }}
     
-    html, body, [class*="st-"] {{ font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important; }}
-    .stApp {{ {bg_css} transition: background 0.8s ease; }}
-    .stApp::before {{ content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: -1; }}
-    audio {{ display: none !important; }}
+    .stApp {{ background-color: #000000; }}
 
-    /* КНОПКА ВЫЙТИ (СЛЕВА СВЕРХУ) */
-    .exit-btn-fixed {{
+    /* КНОПКА НАЗАД (СЛЕВА ВВЕРХУ) */
+    .back-btn {{
         position: fixed;
-        top: 25px;
-        left: 25px;
-        z-index: 5000;
+        top: 30px;
+        left: 30px;
+        z-index: 9999;
     }}
-
-    /* УНИВЕРСАЛЬНЫЕ КНОПКИ */
     div.stButton > button {{
-        background: rgba(255, 255, 255, 0.02) !important;
-        backdrop-filter: blur(40px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(160, 32, 240, 0.5) !important;
         border-radius: 50% !important;
         color: #A020F0 !important;
         width: 55px !important; height: 55px !important;
-        transition: 0.3s ease;
     }}
 
-    /* ГЛАВНЫЙ ФИКС ЦЕНТРАЛЬНОГО КРУГА */
-    .profile-page-container {{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 80vh;
-        width: 100%;
-        position: relative;
-    }}
-
-    .clickable-circle {{
-        width: 180px;
-        height: 180px;
+    /* ГЛАВНЫЙ КРУГ - РОВНО В ЦЕНТРЕ ЭКРАНА */
+    .center-circle {{
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); /* Сдвиг на половину себя назад для идеального центра */
+        width: 200px;
+        height: 200px;
         border-radius: 50%;
         border: 2px solid #A020F0;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(160, 32, 240, 0.05);
+        backdrop-filter: blur(20px);
         display: flex;
-        justify-content: center;
         align-items: center;
-        font-size: 50px;
+        justify-content: center;
+        font-size: 60px;
         color: #A020F0;
-        backdrop-filter: blur(30px);
         overflow: hidden;
-        cursor: pointer;
-        position: relative;
-        box-shadow: 0 0 30px rgba(160, 32, 240, 0.2);
+        box-shadow: 0 0 40px rgba(160, 32, 240, 0.3);
+        z-index: 1000;
     }}
+    .center-circle img {{ width: 100%; height: 100%; object-fit: cover; }}
 
-    /* Растягиваем загрузчик на весь круг */
+    /* Невидимый загрузчик на весь экран, но кликабельный только в центре */
     [data-testid="stFileUploader"] {{
-        position: absolute !important;
-        inset: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 200px !important;
+        height: 200px !important;
         opacity: 0 !important;
-        z-index: 1000 !important;
+        z-index: 1001 !important;
         cursor: pointer !important;
     }}
-
-    /* Текст слева в плеере */
-    .track-info-left {{ text-align: left; padding-left: 5%; margin-top: 15vh; }}
-    .title-text {{ font-size: clamp(32px, 8vw, 52px); font-weight: 800; color: white; letter-spacing: -2px; line-height: 1.1; }}
-    .author-text {{ font-size: 18px; color: #A020F0; font-weight: 300; margin-top: 10px; margin-bottom: 60px; }}
-
-    /* Поиск */
-    div[data-testid="stTextInput"] div[data-baseweb="input"] {{ 
-        background: rgba(255, 255, 255, 0.03) !important; 
-        backdrop-filter: blur(60px) brightness(0.7) !important; 
-        border: 1px solid rgba(160, 32, 240, 0.2) !important; 
-        border-radius: 22px !important; 
-    }}
-    div[data-testid="stTextInput"] div[data-baseweb="input"]::after {{ 
-        content: "?"; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); 
-        color: #A020F0; font-weight: 700; font-size: 18px; 
-    }}
-    div[data-testid="stTextInput"] input {{ color: white !important; background: transparent !important; padding: 20px !important; border: none !important; }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. ЛОГИКА ЭКРАНОВ ---
-
 if st.session_state.page == "profile":
-    # Кнопка ВЫЙТИ в левом верхнем углу
-    st.markdown('<div class="exit-btn-fixed">', unsafe_allow_html=True)
-    if st.button("←", key="exit_profile_page"):
+    # Кнопка назад
+    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+    if st.button("←"):
         st.session_state.page = "main"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:5px; margin-top:30px;">PROFILE</div>', unsafe_allow_html=True)
-    
-    # ЦЕНТРАЛЬНЫЙ КОНТЕЙНЕР
-    st.markdown('<div class="profile-page-container">', unsafe_allow_html=True)
-    
-    # Визуальный круг
-    st.markdown('<div class="clickable-circle">', unsafe_allow_html=True)
+    # Круг в центре
     if st.session_state.user_ava:
-        st.markdown(f'<img src="data:image/png;base64,{st.session_state.user_ava}" style="width:100%; height:100%; object-fit:cover;">', unsafe_allow_html=True)
+        st.markdown(f'<div class="center-circle"><img src="data:image/png;base64,{st.session_state.user_ava}"></div>', unsafe_allow_html=True)
     else:
-        st.write("+")
-    
-    # Невидимый загрузчик внутри круга
-    up = st.file_uploader("", key="ava_up_file", label_visibility="collapsed")
+        st.markdown('<div class="center-circle">+</div>', unsafe_allow_html=True)
+
+    # Загрузчик (привязан к центру)
+    up = st.file_uploader("", key="ava_up", label_visibility="collapsed")
     if up:
         st.session_state.user_ava = get_base64(up)
         st.rerun()
-    
-    st.markdown('</div></div>', unsafe_allow_html=True)
-
 else:
-    # ГЛАВНЫЙ ЭКРАН ПЛЕЕРА
-    n1, _, n2, n3 = st.columns([0.15, 0.6, 0.12, 0.13])
-    with n1:
-        if st.button("☰"): st.session_state.page = "library" if st.session_state.page != "library" else "main"; st.rerun()
-    with n2:
-        glow = "box-shadow: 0 0 15px #A020F0; border: 2px solid #A020F0 !important;" if st.session_state.user_ava else ""
-        st.markdown(f'<div style="{glow} border-radius:50%;">', unsafe_allow_html=True)
-        if st.button("👤"): st.session_state.page = "profile"; st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    with n3:
-        if st.button("?"): st.session_state.page = "search"; st.rerun()
-
-    tracks = sorted([f for f in os.listdir("music") if f.endswith(".mp3")])
-
-    if st.session_state.page == "search":
-        q = st.text_input("", placeholder="напиши хуйню", key="s_q")
-        if q and tracks:
-            for t in [x for x in tracks if q.lower() in x.lower()]:
-                c_n, c_p = st.columns([0.85, 0.15])
-                with c_n: st.markdown(f"<div style='color:white; padding:18px 0; border-bottom:1px solid #111;'>{t.replace('.mp3','')}</div>", unsafe_allow_html=True)
-                with c_p:
-                    if st.button("▶", key=f"s_{t}"):
-                        st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(t), "main", True; st.rerun()
-
-    elif st.session_state.page == "library":
-        st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:5px; margin-top:20px;">FAVORITES</div>', unsafe_allow_html=True)
-        for f in list(st.session_state.favorites):
-            c_n, c_p = st.columns([0.85, 0.15])
-            with c_n: st.markdown(f"<div style='color:white; padding:18px 0; border-bottom:1px solid #111;'>{f.replace('.mp3','')}</div>", unsafe_allow_html=True)
-            with c_p:
-                if st.button("▶", key=f"l_{f}"):
-                    st.session_state.track_index, st.session_state.page, st.session_state.playing = tracks.index(f), "main", True; st.rerun()
-    else:
-        if tracks:
-            st.markdown('<div style="text-align:center; opacity:0.5; font-size:10px; letter-spacing:4px; margin-top:20px;">COTAKBASS MUSIC</div>', unsafe_allow_html=True)
-            curr = tracks[st.session_state.track_index]
-            name_c = curr.replace(".mp3", "").replace("_", " ")
-            auth, title = name_c.split(", ", 1) if ", " in name_c else ("unknown", name_c)
-            st.markdown(f'<div class="track-info-left"><div class="title-text">{title}</div><div class="author-text">{auth}</div></div>', unsafe_allow_html=True)
-            _, b1, b2, b3, b4, _ = st.columns(6)
-            with b1:
-                if st.button("❮"): st.session_state.track_index = (st.session_state.track_index - 1) % len(tracks); st.session_state.current_bg = None; st.rerun()
-            with b2:
-                if st.button("Ⅱ" if st.session_state.playing else "▶"): st.session_state.playing = not st.session_state.playing; st.rerun()
-            with b3:
-                if st.button("❯"): st.session_state.track_index = (st.session_state.track_index + 1) % len(tracks); st.session_state.current_bg = None; st.rerun()
-            with b4:
-                is_f = curr in st.session_state.favorites
-                if st.button("💜" if is_f else "🤍"):
-                    if is_f: st.session_state.favorites.remove(curr)
-                    else: st.session_state.favorites.add(curr); st.snow()
-                    st.rerun()
-            st.audio(os.path.join("music", curr), autoplay=st.session_state.playing)
+    # ГЛАВНЫЙ ЭКРАН (Упрощенно, чтобы ты проверил профиль)
+    st.markdown('<div style="text-align:center; margin-top:40vh;">', unsafe_allow_html=True)
+    if st.button("👤 ПРОФИЛЬ"):
+        st.session_state.page = "profile"
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
